@@ -38,7 +38,7 @@ class VersionHistoryController
 
         } catch (VersionControlException | Exception $e) {
             // TODO: create an acceptable user error message, instead of exposing our internals
-            view('fetch', ['message' => $e->getMessage()]);
+            view('fetch-commits', ['message' => $e->getMessage()]);
 
             return;
         }

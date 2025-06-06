@@ -1,0 +1,27 @@
+# Setup
+
+After cloning this repository to your local machine only a couple of setup actions are required.
+
+## Setup Dependencies
+Run the following `composer` command from the `source` folder of the application.
+
+`composer install`
+
+## Build and Run Docker Containers
+Run the following `docker-compose` commands from the `source` folder of the application.
+
+`docker-compose build`
+
+`docker-compose up -d`
+
+## Run Database Migration
+From a terminal within your `app` container run the following command to setup the database tables.
+
+`php database/migrate.php`
+
+### phpMyAdmin
+For simplicity's sake phpMyAdmin is included.  It can be accessed at:
+
+[http://localhost:8080/](http://localhost:8080/)
+
+The credentials are listed in the project's [.env](source/.env) file.
