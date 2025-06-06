@@ -1,6 +1,6 @@
 # Implementation and Conceptual Questions
 
-- [How were you debugging this mini-project?](#how-were-you-debugging-this-mini-project-)
+- [How were you debugging this mini-project?](#how-were-you-debugging-this-mini-project)
 - [Please give a detailed answer on your approach to test this project](#please-give-a-detailed-answer-on-your-approach-to-test-this-project)
 - [Imagine this mini-project needs microservices with one single database](#imagine-this-mini-project-needs-microservices-with-one-single-database)
     * [Assumptions](#assumptions)
@@ -13,8 +13,8 @@
 - [How would your solution differ if you had to call another external API to store and receive the commits](#how-would-your-solution-differ-if-you-had-to-call-another-external-api-to-store-and-receive-the-commits)
     * [The Core Shift](#the-core-shift)
     * [What Would Change](#what-would-change)
-        + [1. Replace `saveCommits()`](#1-replace--savecommits---)
-        + [2. Update `getCommits()` and `countCommits()`](#2-update--getcommits----and--countcommits---)
+        + [1. Replace `saveCommits()`](#1-replace-savecommits)
+        + [2. Update `getCommits()` and `countCommits()`](#2-update-getcommits-and-countcommits)
         + [3. Leave the Controller and Service Layer Alone](#3-leave-the-controller-and-service-layer-alone)
     * [Summary of What Changes](#summary-of-what-changes)
     * [Other Potential Improvements](#other-potential-improvements)
@@ -144,8 +144,6 @@ public API into the system would not change, therefore ensuring backwards compat
 Based on the current architecture (PHP, services + controllers, `GitHubService`, `GitHubConnector`, `Commit` model, 
 DB via Eloquent), switching from "saving to a database" to "pushing to and fetching from an external API" instead, 
 would only affect a few small areas.
-
-Here's how I would **adapt your solution cleanly and modularly**, staying true to your structure.
 
 ---
 
