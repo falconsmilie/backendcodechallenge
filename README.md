@@ -8,8 +8,6 @@
 
 Before continuing please ensure you have followed the [SETUP.md](SETUP.md) instructions.
 
----
-
 ## Routes
 The route with no params is a simple index page.
 
@@ -17,8 +15,6 @@ The route with no params is a simple index page.
 
 The application supports both `get` and `view` commits, for any supported provider (currently only GitHub), and any 
 repository within that provider.
-
----
 
 ### Get
 The `get` route supports retrieving commits from the requested provider, repo owner and repo. The structure of the `get`
