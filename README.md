@@ -1,77 +1,86 @@
 # README.md
-  - [Running the Application](#running-the-application)
-  - [Routes](#routes)
-    + [Get](#get)
-    + [View](#view)
 
-## Running the Application
+- [Running the Application](#running-the-application)
+- [Routes](#routes)
+    + [GET](#get)
+    + [VIEW](#view)
 
-Before continuing please ensure you have followed the [SETUP.md](SETUP.md) instructions.
+## Implementation and Conceptual Questions
 
-## Routes
-The route with no params is a simple index page.
-
-[http://localhost:8000](http://localhost:8000)
-
-The application supports both `get` and `view` commits, for any supported provider (currently only GitHub), and any 
-repository within that provider.
-
-### Get
-The `get` route supports retrieving commits from the requested provider, repo owner and repo. The structure of the `get`
-route is;
-
-`http://localhost:8000/get/{provider}/{repo-owner}/{repo-name}`
-
-| Parameter    | Required | Description                                                 |
-|--------------|:--------:|-------------------------------------------------------------|
-| `get`        |    *     | this is the route "action" and must be written as `get`.    |
-| `provider`   |    *     | the only provider which is currently supported is `github`. |
-| `repo-owner` |    *     | the *owner* of the repository you want to query.            |
-| `repo-name`  |    *     | the *name* of the repository you want to query.             |
-
-Following are some examples of valid `get` routes;
-
-http://localhost:8000/get/github/nodejs/node
-
-http://localhost:8000/get/github/Circunomics/hiring_backendcodechallenge
-
-http://localhost:8000/get/github/falconsmilie/Raspberry-Pi-3-Weather
-
-Incorrect or misspelt repository names are handled via the exception message being returned to the view. Malformed routes,
-eg missing `repo-name` etc, will be redirected to the `index` route.
-
-During development I was torn between putting this logic into a job which would run every minute (or as requirements dictate) 
-on a background queue, or to keep it the way it is. It would depend on the end user for what is the better approach here.
+Please refer to [Q&A.md](Q&A.md) for responses to implementation and design-related questions.
 
 ---
 
-### View
-The `view` route is far more flexible, but is still formed in the same way as the `get` route. Currently, all `view` data 
-is stored in the database and is the result of whatever `get` routes have previously been called. 
+## Running the Application
 
-The structure of the `view` route is;
+Before proceeding, ensure you have followed the setup instructions in [SETUP.md](SETUP.md).
 
-`http://localhost:8000/view/{provider}/{repo-owner}/{repo-name}`
+---
 
-| Parameter    | Required  | Description                                                 |
-|--------------|:---------:|-------------------------------------------------------------|
-| `view`       |     *     | this is the route "action" and must be written as `view`.   |
-| `provider`   |     *     | the only provider which is currently supported is `github`. |
-| `repo-owner` |           | the *owner* of the repository you want to query.            |
-| `repo-name`  |           | the *name* of the repository you want to query.             |
+## Routes
 
-Following are some example routes;
+The root route without parameters returns a basic index page:
 
-http://localhost:8000/view/github/nodejs/node (1)
+[http://localhost:8000](http://localhost:8000)
 
-http://localhost:8000/view/github/nodejs/ (2)
+The application supports both `get` and `view` operations for commits, for any supported provider (currently only GitHub), and for any repository belonging to that provider.
 
-http://localhost:8000/view/github/ (3)
+---
 
-This route formatting allows us to view commits from, for example;
-* the `node` repo (1)
-* the `nodejs` owner (2)
-* all `github` commits (3)
+### GET
 
-To understand how the commit data is stored, the database schema is available here; 
+The `get` route triggers retrieval of commits from the specified provider, repository owner, and repository name. Its format is:
+
+```
+http://localhost:8000/get/{provider}/{repo-owner}/{repo-name}
+```
+
+| Parameter     | Required | Description                                                   |
+|---------------|:--------:|---------------------------------------------------------------|
+| `get`         |    ✓     | Route action keyword; must be `get`.                          |
+| `provider`    |    ✓     | Currently only `github` is supported.                         |
+| `repo-owner`  |    ✓     | Owner of the repository.                                      |
+| `repo-name`   |    ✓     | Name of the repository.                                       |
+
+**Examples:**
+
+- http://localhost:8000/get/github/nodejs/node
+- http://localhost:8000/get/github/Circunomics/hiring_backendcodechallenge
+- http://localhost:8000/get/github/falconsmilie/Raspberry-Pi-3-Weather
+
+Invalid or misspelled repository names will return an appropriate exception message. Malformed routes (e.g., missing parameters) redirect to the index route.
+
+> During development, there was consideration given to implementing this as a scheduled background job (e.g., every minute), rather than on-demand. The ideal approach depends on user requirements and the intended purpose of the application.
+
+---
+
+### VIEW
+
+The `view` route allows inspection of previously retrieved commits stored in the database. It follows the same structural pattern as the `get` route:
+
+```
+http://localhost:8000/view/{provider}/{repo-owner}/{repo-name}
+```
+
+| Parameter     | Required | Description                                                   |
+|---------------|:--------:|---------------------------------------------------------------|
+| `view`        |    ✓     | Route action keyword; must be `view`.                         |
+| `provider`    |    ✓     | Currently only `github` is supported.                         |
+| `repo-owner`  |    ✕     | Repository owner (optional).                                  |
+| `repo-name`   |    ✕     | Repository name (optional).                                   |
+
+**Examples:**
+
+- http://localhost:8000/view/github/nodejs/node
+- http://localhost:8000/view/github/nodejs/
+- http://localhost:8000/view/github/
+
+This format enables flexible querying:
+
+1. View commits for a specific repository.
+2. View all commits from a specific repository owner.
+3. View all GitHub commits stored in the database.
+
+To understand the structure of the stored data, refer to the database schema:
+
 [2025_06_07_create_commits_table.php](source/database/migrations/2025_06_07_create_commits_table.php)

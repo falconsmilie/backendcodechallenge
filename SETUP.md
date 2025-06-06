@@ -1,6 +1,7 @@
 # Setup
 
-After cloning this repository to your local machine only a couple of setup actions are required.
+After cloning this repository to your local machine only a couple of setup actions are required. Knowledge of composer
+and Docker is assumed.
 
 ## Setup Dependencies
 Run the following `composer` command from the `source` folder of the application.

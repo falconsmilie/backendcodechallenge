@@ -24,14 +24,16 @@ For the most part i was simply using `var_dump`. In a dedicated working environm
 with XDebug.
 
 ## Please give a detailed answer on your approach to test this project
-To keep within time constraints i decided on purely unit tests for this feature. Due to the nature of the application in
-requesting data from 3rd party sources, and having database access, it was important that this behaviour was isolated via
-way of mocks.
+Due to time constraints, I focused exclusively on unit testing for this feature. Given the application’s reliance on 
+external APIs and database interactions, isolating these dependencies was essential. I achieved this using mocks to 
+ensure test determinism and avoid side effects. While I considered using Mockery for more expressive mocking, I opted 
+to stay within PHPUnit’s native mocking capabilities to minimize dependency overhead. My approach wasn't driven by TDD, 
+but rather by pragmatic unit testing aimed at verifying class-level logic and ensuring behavioural correctness in isolation.
 
 
 ## Imagine this mini-project needs microservices with one single database
 
-Designing a **microservice-based architecture** for our version control integration mini-project, with a **single 
+Designing a **microservice-based architecture** for the version control integration mini-project, with a **single 
 shared database**, requires careful consideration. Microservices ideally should be **loosely coupled and independently 
 deployable**, but sharing a database introduces coupling. Still, it’s a common transitional setup or simplification in 
 smaller projects.
@@ -138,12 +140,11 @@ One **PostgreSQL** or **MySQL** instance with at least the following tables:
 ---
 
 ## How would your solution differ if you had to call another external API to store and receive the commits?
-It would not vary much at all. The logic for storing and retrieving is abstracted into it's own service connectors. The 
+It would not vary much at all. The logic for storing and retrieving is abstracted into its own service connectors. The 
 public API into the system would not change, therefore ensuring backwards compatibility.
 
-Based on the current architecture (PHP, services + controllers, `GitHubService`, `GitHubConnector`, `Commit` model, 
-DB via Eloquent), switching from "saving to a database" to "pushing to and fetching from an external API" instead, 
-would only affect a few small areas.
+Based on the current architecture, switching from "saving to a database" to "pushing to and fetching from an external API" 
+instead, would only affect a few small areas.
 
 ---
 
