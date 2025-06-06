@@ -20,23 +20,19 @@
     * [Other Potential Improvements](#other-potential-improvements)
 
 ## How were you debugging this mini-project?
-For the most part i was simply using `var_dump`. In a dedicated working environment I would prefer to use PhpStorm IDE
+For the most part i was using `var_dump`. In a dedicated working environment I would prefer to use PhpStorm IDE
 with XDebug.
 
 ## Please give a detailed answer on your approach to test this project
 Due to time constraints, I focused exclusively on unit testing for this feature. Given the application’s reliance on 
-external APIs and database interactions, isolating these dependencies was essential. I achieved this using mocks to 
-ensure test determinism and avoid side effects. While I considered using Mockery for more expressive mocking, I opted 
-to stay within PHPUnit’s native mocking capabilities to minimize dependency overhead. My approach wasn't driven by TDD, 
-but rather by pragmatic unit testing aimed at verifying class-level logic and ensuring behavioural correctness in isolation.
-
+external APIs and database interactions, isolating these dependencies was important. I considered using Mockery but opted 
+to stay within PHPUnit’s mocking. My approach wasn't driven by TDD, but by unit testing aimed at class-level logic, 
+ensuring correct behaviour in isolation.
 
 ## Imagine this mini-project needs microservices with one single database
 
-Designing a **microservice-based architecture** for the version control integration mini-project, with a **single 
-shared database**, requires careful consideration. Microservices ideally should be **loosely coupled and independently 
-deployable**, but sharing a database introduces coupling. Still, it’s a common transitional setup or simplification in 
-smaller projects.
+Microservices should be **loosely coupled and independently deployable**. Sharing a database introduces 
+coupling. It’s a common transitional setup or simplification in smaller projects.
 
 ---
 
@@ -49,7 +45,16 @@ smaller projects.
 
 ---
 
-### Suggested Microservices
+### Considerations
+
+* **Avoid tight DB coupling:** If the database is shared, **encapsulate** all SQL access within one service per table.
+* Define **clear service contracts**.
+* Add **health checks** and **logging** per service.
+* Use **OpenAPI / Swagger** to document service endpoints.
+
+---
+
+### Microservices
 
 1. **VersionControlFetcherService**
 
@@ -83,7 +88,7 @@ smaller projects.
 
 ---
 
-### Database Design
+### Database
 
 One **PostgreSQL** or **MySQL** instance with at least the following tables:
 
@@ -98,7 +103,7 @@ One **PostgreSQL** or **MySQL** instance with at least the following tables:
 ### Communication Between Services
 
 * Use **REST** or **gRPC** for internal service-to-service calls.
-* Use **message queues** (RabbitMQ / Redis Streams / Kafka, Laravel Queues, Symfony Messenger) for async fetching, commit ingestion, or retries.
+* Use **message queues** (RabbitMQ / Redis Streams / Kafka) for async fetching, commit ingestion, or retries.
 
 ---
 
@@ -130,35 +135,19 @@ One **PostgreSQL** or **MySQL** instance with at least the following tables:
 
 ---
 
-### Considerations
-
-* **Avoid tight DB coupling:** If the database is shared, **encapsulate** all SQL access within one service per table.
-* Define **clear service contracts**.
-* Add **health checks** and **logging** per service.
-* Use **OpenAPI / Swagger** to document service endpoints.
-
----
-
 ## How would your solution differ if you had to call another external API to store and receive the commits?
 It would not vary much at all. The logic for storing and retrieving is abstracted into its own service connectors. The 
-public API into the system would not change, therefore ensuring backwards compatibility.
-
-Based on the current architecture, switching from "saving to a database" to "pushing to and fetching from an external API" 
-instead, would only affect a few small areas.
-
----
-
-### The Core Shift
+public API into the system would not change. Switching from "_saving to a database_" over to "_pushing to and fetching from 
+an external API_", would only affect a few small areas.
 
 Currently:
 
 * `GitHubConnector::get()` fetches commits from GitHub and calls `saveCommits()` to insert into the **database** (via `Commit::insertOrIgnore`).
-* The controller (`VersionHistoryController`) shows the view using `VersionControlFactory → GitHubService → GitHubConnector`.
 
-We now need to:
+Now we have to:
 
 * Send commits to an external API (instead of saving to DB).
-* Fetch commits from that API (instead of querying your own DB).
+* Fetch commits from that API (instead of querying the DB).
 
 ---
 
@@ -212,7 +201,7 @@ public function countCommits(): int
 }
 ```
 
-We would now make **external API GET requests**:
+We now make external API GET requests for both methods. For example:
 
 ```php
 public function getCommits(int $page, int $resultsPerPage): Collection
@@ -231,19 +220,6 @@ public function getCommits(int $page, int $resultsPerPage): Collection
     return collect($data)->groupBy('author');
 }
 
-public function countCommits(): int
-{
-    $response = $this->client->get("https://external-api.example.com/commits/count", [
-        'query' => [
-            'owner' => $this->owner,
-            'repo' => $this->repo,
-        ],
-    ]);
-
-    $data = json_decode($response->getBody()->getContents(), true);
-
-    return $data['count'] ?? 0;
-}
 ```
 
 ---
@@ -260,19 +236,6 @@ new VersionControlFactory($this->provider, $this->owner, $this->repo)
 
 Because the **connector is encapsulated**, and there is a well-defined **separation of concerns**, we’re simply swapping DB 
 logic for HTTP logic.
-
----
-
-### Summary of What Changes
-
-| Layer                               | Current              | New                                 |
-| ----------------------------------- | -------------------- | ----------------------------------- |
-| **Controller**                      | No changes           |                                     |
-| **AbstractVersionControlService**   | No changes           |                                     |
-| **GitHubConnector::saveCommits()**  | Eloquent bulk insert | POST to external API                |
-| **GitHubConnector::getCommits()**   | DB read + groupBy    | GET from external API               |
-| **GitHubConnector::countCommits()** | DB count             | GET from external API               |
-| **Testing**                         | Mock DB              | Mock external API (via Guzzle client) |
 
 ---
 

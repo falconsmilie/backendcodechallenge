@@ -9,7 +9,6 @@ class VersionControlFactory
 {
     public function __construct(protected string $provider, protected string $owner, protected string $repo)
     {
-
     }
 
     /**

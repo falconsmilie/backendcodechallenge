@@ -6,6 +6,7 @@ use App\Exceptions\VersionControlException;
 use App\Models\Commit;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Psr\Http\Message\ResponseInterface;
 
@@ -33,11 +34,11 @@ class GitHubConnector implements VersionControlConnector
     }
 
     /**
-     * Things to consider for the future; retries, rate-limiting
+     * Things to consider for the future; a job with retries, rate-limiting ...
      *
      * @throws VersionControlException
      */
-    public function get(int $count = 1000): array
+    public function get(int $count = 100): array
     {
         $perPage = min($count, self::GITHUB_FETCH_PER_PAGE_LIMIT);
         $pages = ceil($count / $perPage);
@@ -55,23 +56,14 @@ class GitHubConnector implements VersionControlConnector
             $commits = json_decode($response->getBody()->getContents(), true);
 
             if ($commits === null) {
-                throw new VersionControlException('Something went wrong reading the requested repo.');
+                throw new VersionControlException(
+                    'Something went wrong reading the '.$this->owner.'/'.$this->repo .' repo.'
+                );
             }
 
             foreach ($commits as $commit) {
                 if (isset($commit['sha'])) {
-                    $commitHashes[] = [
-                        'provider' => 'github',
-                        'owner' => $this->owner,
-                        'repo' => $this->repo,
-                        'hash' => $commit['sha'],
-                        'author' => $commit['commit']['author']['name'] ?? 'Unknown',
-                        'author_avatar_url' => $commit['author']['avatar_url'] ?? '',
-                        'author_html_url' => $commit['author']['html_url'] ?? '',
-                        'commit_date' => $commit['commit']['author']['date'],
-                        'commit_message' => $commit['commit']['message'],
-                        'commit_html_url' => $commit['html_url'],
-                    ];
+                    $commitHashes[] = $this->getModelKeys($commit);
                 }
             }
 
@@ -80,9 +72,7 @@ class GitHubConnector implements VersionControlConnector
             }
         }
 
-//        foreach ($commitHashes as $commit) {
-            $this->saveCommits($commitHashes);
-//        }
+        $this->saveCommits($commitHashes);
 
         return $commitHashes;
     }
@@ -116,17 +106,12 @@ class GitHubConnector implements VersionControlConnector
             });
     }
 
-    public function getCommits(int $page, int $resultsPerPage): Collection
+    protected function getCommits(int $page, int $resultsPerPage): Collection
     {
+        /** @var Builder $query */
         $query = Commit::where('provider', 'github');
 
-        if ($this->owner) {
-            $query->where('owner', $this->owner);
-        }
-
-        if ($this->repo) {
-            $query->where('repo', $this->repo);
-        }
+        $this->commitWhereOwner($query);
 
         return $query->orderBy('commit_date', 'desc')
             ->skip(($page - 1) * $resultsPerPage)
@@ -135,8 +120,40 @@ class GitHubConnector implements VersionControlConnector
             ->groupBy('author');
     }
 
-    public function countCommits(): int
+    protected function countCommits(): int
     {
-        return Commit::count();
+        /** @var Builder $query */
+        $query = Commit::where('provider', 'github');
+
+        $this->commitWhereOwner($query);
+
+        return $query->count();
+    }
+
+    protected function commitWhereOwner(Builder $query): void
+    {
+        if ($this->owner) {
+            $query->where('owner', $this->owner);
+        }
+
+        if ($this->repo) {
+            $query->where('repo', $this->repo);
+        }
+    }
+
+    protected function getModelKeys(array $commit): array
+    {
+        return [
+            'provider' => 'github',
+            'owner' => $this->owner,
+            'repo' => $this->repo,
+            'hash' => $commit['sha'],
+            'author' => $commit['commit']['author']['name'] ?? 'Unknown',
+            'author_avatar_url' => $commit['author']['avatar_url'] ?? '',
+            'author_html_url' => $commit['author']['html_url'] ?? '',
+            'commit_date' => $commit['commit']['author']['date'],
+            'commit_message' => $commit['commit']['message'],
+            'commit_html_url' => $commit['html_url'],
+        ];
     }
 }

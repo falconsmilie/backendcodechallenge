@@ -25,7 +25,7 @@ class VersionHistoryController
             'view-commits',
             new VersionControlFactory($this->provider, $this->owner, $this->repo)
                 ->make()
-                ->view()
+                ->view(8)
         );
     }
 
@@ -34,7 +34,7 @@ class VersionHistoryController
         try {
             new VersionControlFactory($this->provider, $this->owner, $this->repo)
                 ->make()
-                ->get(10);
+                ->get(1000);
 
         } catch (VersionControlException | Exception $e) {
             // TODO: create an acceptable user error message, instead of exposing our internals
