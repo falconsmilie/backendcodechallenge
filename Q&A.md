@@ -249,7 +249,7 @@ public function countCommits(): int
 
 #### 3. Leave the Controller and Service Layer Alone
 
-Our `VersionHistoryController` and `VersionControlFactory` don’t need to change at all.
+The `VersionHistoryController` and `VersionControlFactory` don’t need to change at all.
 
 ```php
 new VersionControlFactory($this->provider, $this->owner, $this->repo)
@@ -278,4 +278,4 @@ logic for HTTP logic.
 ### Other Potential Improvements
 
 * If the external API supports **batching**, respect rate limits using retries or Guzzle’s `handler stack`.
-* Consider caching external results to reduce API calls for pagination.
+* Consider caching external results to reduce API calls.
