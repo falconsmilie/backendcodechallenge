@@ -2,125 +2,81 @@
 
 namespace Tests\Services;
 
+use App\Exceptions\VersionControlException;
+use App\Models\Commit;
 use App\Services\GitHubConnector;
 use GuzzleHttp\Client;
+use GuzzleHttp\Psr7\Response;
+use Illuminate\Support\Collection;
 use PHPUnit\Framework\TestCase;
-use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\StreamInterface;
 
 class GitHubConnectorTest extends TestCase
 {
-    public function testViewReturnsExpectedData()
+    public function testGetFetchesAndParsesCommitsCorrectly()
     {
-        $mockCommitsGrouped = collect([
-            'Alice' => [
-                ['hash' => 'abc123', 'author' => 'Alice'],
-                ['hash' => 'def456', 'author' => 'Alice'],
-            ],
-            'Bob' => [
-                ['hash' => 'xyz789', 'author' => 'Bob'],
-            ],
-        ]);
+        $fakeCommit = [
+            [
+                'sha' => 'abc123',
+                'commit' => [
+                    'author' => [
+                        'name' => 'Jane Doe',
+                        'date' => '2023-01-01T12:00:00Z',
+                    ],
+                    'message' => 'Initial commit',
+                ],
+                'author' => [
+                    'avatar_url' => 'https://avatars.githubusercontent.com/u/1?v=4',
+                    'html_url' => 'https://github.com/janedoe',
+                ],
+                'html_url' => 'https://github.com/janedoe/repo/commit/abc123',
+            ]
+        ];
 
-        $mock = $this->getMockBuilder(GitHubConnector::class)
+        $json = json_encode($fakeCommit);
+
+        $streamMock = $this->createMock(StreamInterface::class);
+        $streamMock->method('getContents')->willReturn($json);
+
+        $responseMock = $this->createMock(Response::class);
+        $responseMock->method('getBody')->willReturn($streamMock);
+
+        $clientMock = $this->createMock(Client::class);
+        $clientMock->method('get')->willReturn($responseMock);
+
+        $connector = $this->getMockBuilder(GitHubConnector::class)
+            ->setConstructorArgs([$clientMock, 'owner', 'repo'])
+            ->onlyMethods(['saveCommits'])
+            ->getMock();
+
+        $connector->expects($this->once())->method('saveCommits');
+
+        $result = $connector->get(1);
+
+        $this->assertCount(1, $result);
+        $this->assertEquals('abc123', $result[0]['hash']);
+        $this->assertEquals('Jane Doe', $result[0]['author']);
+    }
+
+    public function testViewReturnsPaginationStructure()
+    {
+        $_GET['page'] = 2;
+
+        $clientStub = $this->createStub(Client::class);
+
+        $connector = $this->getMockBuilder(GitHubConnector::class)
+            ->setConstructorArgs([$clientStub, 'owner', 'repo'])
             ->onlyMethods(['getCommits', 'countCommits'])
             ->getMock();
 
-        // Mock getCommits to return our grouped commits
-        $mock->method('getCommits')
-            ->willReturn($mockCommitsGrouped);
+        $connector->method('getCommits')->willReturn(collect(['commits...']));
+        $connector->method('countCommits')->willReturn(250);
 
-        // Mock countCommits to return total commits count = 3
-        $mock->method('countCommits')
-            ->willReturn(3);
+        $result = $connector->view(100);
 
-        // Simulate $_GET['page'] not set, so page = 1
-        unset($_GET['page']);
-
-        $resultsPerPage = 2;
-
-        $result = $mock->view($resultsPerPage);
-
-        $this->assertArrayHasKey('commits', $result);
-        $this->assertArrayHasKey('page', $result);
-        $this->assertArrayHasKey('totalPages', $result);
-        $this->assertArrayHasKey('totalCommits', $result);
-
-        $this->assertSame(1, $result['page']);
-        $this->assertSame(3, $result['totalCommits']);
-
-        $this->assertEquals($mockCommitsGrouped, $result['commits']);
-    }
-//
-//    public function testViewPageParameterBelowOneDefaultsToOne()
-//    {
-//        $mock = $this->getMockBuilder(GitHubConnector::class)
-//            ->onlyMethods(['queryCommits', 'countCommits'])
-//            ->getMock();
-//
-//        $mock->method('queryCommits')->willReturn([]);
-//        $mock->method('countCommits')->willReturn(0);
-//
-//        $_GET['page'] = -5;
-//
-//        $result = $mock->view(10);
-//
-//        $this->assertSame(1, $result['page']);
-//    }
-//
-//    public function testViewPageParameterIsUsedIfValid()
-//    {
-//        $mock = $this->getMockBuilder(GitHubConnector::class)
-//            ->onlyMethods(['queryCommits', 'countCommits'])
-//            ->getMock();
-//
-//        $mock->method('queryCommits')->willReturn([]);
-//        $mock->method('countCommits')->willReturn(0);
-//
-//        $_GET['page'] = 3;
-//
-//        $result = $mock->view(10);
-//
-//        $this->assertSame(3, $result['page']);
-//    }
-
-    public function testFetchReturnsCommitsFromGitHub()
-    {
-        $stream = $this->createMock(StreamInterface::class);
-        $stream->method('getContents')->willReturn(json_encode([
-            ['sha' => 'abc123', 'commit' => ['author' => ['name' => 'Alice']]],
-            ['sha' => 'def456', 'commit' => ['author' => ['name' => 'Bob']]],
-        ]));
-
-        $response = $this->createMock(ResponseInterface::class);
-        $response->method('getBody')->willReturn($stream);
-
-        $client = $this->createMock(Client::class);
-        $client->method('get')->willReturn($response);
-
-        $mock = $this->getMockBuilder(GitHubConnector::class)
-            ->onlyMethods(['client', 'response', 'saveCommit'])
-            ->getMock();
-
-        $mock->method('client')->willReturn($client);
-        $mock->method('response')->willReturn($response);
-
-        $calls = [];
-        $mock->expects($this->exactly(2))
-            ->method('saveCommit')
-            ->willReturnCallback(function ($commit) use (&$calls) {
-                $calls[] = $commit;
-
-                return null;
-            });
-
-        $result = $mock->get(200);
-
-        $this->assertCount(2, $calls);
-        $this->assertSame(['hash' => 'abc123', 'author' => 'Alice'], $calls[0]);
-        $this->assertSame(['hash' => 'def456', 'author' => 'Bob'], $calls[1]);
-
-        $this->assertCount(2, $result);
-        $this->assertSame('abc123', $result[0]['hash']);
+        $this->assertEquals(2, $result['page']);
+        $this->assertEquals(3, $result['totalPages']);
+        $this->assertEquals(250, $result['totalCommits']);
+        $this->assertEquals(['commits...'], $result['commits']->all());
     }
 }

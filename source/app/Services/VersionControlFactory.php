@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Exceptions\VersionControlException;
 use Exception;
 
 class VersionControlFactory
@@ -22,9 +23,9 @@ class VersionControlFactory
 
             case 'gitlab':
             case 'bitbucket':
-                throw new Exception($this->provider . ' is not currently supported.');
+                throw new VersionControlException($this->provider . ' is not currently supported.');
         }
 
-        throw new Exception($this->provider . ' is not currently supported.');
+        throw new VersionControlException($this->provider . ' is not currently supported.');
     }
 }

@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Exceptions\VersionControlServiceException;
+use App\Exceptions\VersionControlException;
 use App\Models\Commit;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
@@ -16,7 +16,7 @@ class GitHubConnector implements VersionControlConnector
     }
 
     // @see https://docs.github.com/en/rest/commits/commits?apiVersion=2022-11-28#list-commits
-    private const GITHUB_FETCH_PER_PAGE_LIMIT = 100;
+    private const int GITHUB_FETCH_PER_PAGE_LIMIT = 100;
 
     public function view(int $resultsPerPage = 100): array
     {
@@ -35,7 +35,7 @@ class GitHubConnector implements VersionControlConnector
     /**
      * Things to consider for the future; retries, rate-limiting
      *
-     * @throws VersionControlServiceException
+     * @throws VersionControlException
      */
     public function get(int $count = 1000): array
     {
@@ -55,7 +55,7 @@ class GitHubConnector implements VersionControlConnector
             $commits = json_decode($response->getBody()->getContents(), true);
 
             if ($commits === null) {
-                throw new VersionControlServiceException('Something went wrong reading the requested repo.');
+                throw new VersionControlException('Something went wrong reading the requested repo.');
             }
 
             foreach ($commits as $commit) {
@@ -80,15 +80,15 @@ class GitHubConnector implements VersionControlConnector
             }
         }
 
-        foreach ($commitHashes as $commit) {
-            $this->saveCommit($commit);
-        }
+//        foreach ($commitHashes as $commit) {
+            $this->saveCommits($commitHashes);
+//        }
 
         return $commitHashes;
     }
 
     /**
-     * @throws VersionControlServiceException
+     * @throws VersionControlException
      */
     protected function response(Client $client, string $repo, int $page, int $perPage): ResponseInterface
     {
@@ -101,18 +101,19 @@ class GitHubConnector implements VersionControlConnector
             ]);
         } catch (GuzzleException $e) {
             // TODO: log this error
-            throw new VersionControlServiceException($e->getMessage(), $e->getCode(), $e);
+            throw new VersionControlException($e->getMessage(), $e->getCode(), $e);
         }
 
         return $response;
     }
 
-    protected function saveCommit(array $commit): void
+    protected function saveCommits(array $commits): void
     {
-        Commit::firstOrCreate(
-            ['hash' => $commit['hash']],
-            $commit
-        );
+        collect($commits)
+            ->chunk(500)
+            ->each(function ($chunk) {
+                Commit::insertOrIgnore($chunk->toArray());
+            });
     }
 
     public function getCommits(int $page, int $resultsPerPage): Collection

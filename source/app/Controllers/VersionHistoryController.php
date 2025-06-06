@@ -1,7 +1,7 @@
 <?php
 namespace App\Controllers;
 
-use App\Exceptions\VersionControlServiceException;
+use App\Exceptions\VersionControlException;
 use App\Services\VersionControlFactory;
 use Exception;
 
@@ -23,7 +23,7 @@ class VersionHistoryController
     {
         view(
             'view-commits',
-            (new VersionControlFactory($this->provider, $this->owner, $this->repo))
+            new VersionControlFactory($this->provider, $this->owner, $this->repo)
                 ->make()
                 ->view()
         );
@@ -32,17 +32,17 @@ class VersionHistoryController
     public function get(): void
     {
         try {
-            (new VersionControlFactory($this->provider, $this->owner, $this->repo))
+            new VersionControlFactory($this->provider, $this->owner, $this->repo)
                 ->make()
                 ->get(10);
 
-        } catch (VersionControlServiceException | Exception $e) {
+        } catch (VersionControlException | Exception $e) {
             // TODO: create an acceptable user error message, instead of exposing our internals
             view('fetch', ['message' => $e->getMessage()]);
 
             return;
         }
 
-        view('fetch', ['message' => 'Commits fetched and stored successfully.']);
+        view('fetch-commits', ['message' => 'Commits fetched and stored successfully.']);
     }
 }

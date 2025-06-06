@@ -10,7 +10,7 @@ class GitHubServiceTest extends TestCase
 {
     public function testGetVersionControlServiceReturnsConnector(): void
     {
-        $service = new GitHubService();
+        $service = new GitHubService('owner', 'repo');
 
         $this->assertInstanceOf(
             VersionControlConnector::class,
