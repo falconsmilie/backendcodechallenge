@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Exceptions\VersionControlException;
+use App\Services\GitHub\GitHubService;
 use Exception;
 
 class VersionControlFactory

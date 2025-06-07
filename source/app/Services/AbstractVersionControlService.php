@@ -6,7 +6,7 @@ use App\Exceptions\VersionControlException;
 
 abstract class AbstractVersionControlService
 {
-    abstract public function getVersionControlService(): VersionControlConnector;
+    abstract public function getVersionControlService(): VersionControlConnectorInterface;
 
     /**
      * @throws VersionControlException
