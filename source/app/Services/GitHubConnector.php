@@ -12,12 +12,12 @@ use Psr\Http\Message\ResponseInterface;
 
 class GitHubConnector implements VersionControlConnector
 {
+    // @see https://docs.github.com/en/rest/commits/commits?apiVersion=2022-11-28#list-commits
+    private const int GITHUB_FETCH_PER_PAGE_LIMIT = 100;
+
     public function __construct(protected Client $client, protected string $owner, protected string $repo)
     {
     }
-
-    // @see https://docs.github.com/en/rest/commits/commits?apiVersion=2022-11-28#list-commits
-    private const int GITHUB_FETCH_PER_PAGE_LIMIT = 100;
 
     public function view(int $resultsPerPage = 100): array
     {
@@ -34,7 +34,8 @@ class GitHubConnector implements VersionControlConnector
     }
 
     /**
-     * Things to consider for the future; a job with retries, rate-limiting ...
+     * Things to consider for the future; a job with retries, rate-limiting ... we need to determine if the results
+     * must be on demand or if delays are acceptable.
      *
      * @throws VersionControlException
      */

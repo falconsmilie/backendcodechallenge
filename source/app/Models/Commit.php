@@ -5,7 +5,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * Added this doc block just to satisfy the IDE (PhpStorm), so that we can jump into the Model methods
+ * Added this doc block to satisfy the IDE (PhpStorm), so that we can jump into the Model methods
  *
  * @mixin Builder
  */

@@ -1,6 +1,6 @@
 # Setup
 
-After cloning this repository to your local machine only a couple of setup actions are required. Knowledge of composer
+After cloning this repository to your local machine only a couple of setup actions are required. Knowledge of Composer
 and Docker is assumed.
 
 ## Setup Dependencies
