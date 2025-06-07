@@ -1,5 +1,6 @@
 # README.md
 
+- [Implementation and Conceptual Questions](#implementation-and-conceptual-questions)
 - [Running the Application](#running-the-application)
 - [Routes](#routes)
     + [GET](#get)
@@ -9,13 +10,9 @@
 
 Please refer to [Q&A.md](Q&A.md) for responses to implementation and design-related questions.
 
----
-
 ## Running the Application
 
 Ensure you have followed the setup instructions in [SETUP.md](SETUP.md).
-
----
 
 ## Routes
 
@@ -50,10 +47,10 @@ http://localhost:8000/get/{provider}/{repo-owner}/{repo-name}
 | `repo-owner`  |    ✓     | Owner of the repository.                                      |
 | `repo-name`   |    ✓     | Name of the repository.                                       |
 
-Invalid or misspelled repository names will return an appropriate exception message. Malformed routes (e.g., missing 
+Invalid or misspelled repository names will return an appropriate exception message. Malformed routes (eg missing 
 parameters) redirect to the index route.
 
-> [!IMPORTANT]
+> [!NOTE]
 > During development, i thought about implementing this as a scheduled job, rather than on-demand.
 
 ---

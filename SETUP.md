@@ -6,19 +6,24 @@ and Docker is assumed.
 ## Setup Dependencies
 Run the following `composer` command from the `source` folder of the application.
 
-`composer install`
+```
+composer install
+```
 
 ## Build and Run Docker Containers
 Run the following `docker-compose` commands from the `source` folder of the application.
 
-`docker-compose build`
-
-`docker-compose up -d`
+```
+docker-compose build
+docker-compose up -d
+```
 
 ## Run Database Migration
 From a terminal within your `app` container run the following command to setup the database tables.
 
-`php database/migrate.php`
+```
+php database/migrate.php
+```
 
 ### phpMyAdmin
 For simplicity's sake phpMyAdmin is included.  It can be accessed at:
@@ -26,3 +31,9 @@ For simplicity's sake phpMyAdmin is included.  It can be accessed at:
 [http://localhost:8080/](http://localhost:8080/)
 
 The credentials are listed in the project's [.env](source/.env) file.
+
+## PHPUnit
+When in the `source` folder, PHPUnit is available at:
+```
+vendor/bin/phpunit
+```

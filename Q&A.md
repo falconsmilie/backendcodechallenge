@@ -4,24 +4,21 @@
 - [Please give a detailed answer on your approach to test this project](#please-give-a-detailed-answer-on-your-approach-to-test-this-project)
 - [Imagine this mini-project needs microservices with one single database](#imagine-this-mini-project-needs-microservices-with-one-single-database)
     * [Assumptions](#assumptions)
-    * [Suggested Microservices](#suggested-microservices)
-    * [Database Design](#database-design)
+    * [Suggested Microservices](#microservices)
+    * [Database Design](#database)
     * [Communication Between Services](#communication-between-services)
     * [Deployment Layout](#deployment-layout)
     * [Technologies](#technologies)
     * [Considerations](#considerations)
 - [How would your solution differ if you had to call another external API to store and receive the commits](#how-would-your-solution-differ-if-you-had-to-call-another-external-api-to-store-and-receive-the-commits)
-    * [The Core Shift](#the-core-shift)
     * [What Would Change](#what-would-change)
         + [1. Replace `saveCommits()`](#1-replace-savecommits)
         + [2. Update `getCommits()` and `countCommits()`](#2-update-getcommits-and-countcommits)
         + [3. Leave the Controller and Service Layer Alone](#3-leave-the-controller-and-service-layer-alone)
-    * [Summary of What Changes](#summary-of-what-changes)
     * [Other Potential Improvements](#other-potential-improvements)
 
 ## How were you debugging this mini-project?
-For the most part i was using `var_dump`. In a dedicated working environment I would prefer to use PhpStorm IDE
-with XDebug.
+For the most part i was using `var_dump`. In a dedicated working environment I would use PhpStorm IDE with XDebug.
 
 ## Please give a detailed answer on your approach to test this project
 Due to time constraints, I focused exclusively on unit testing for this feature. Given the application’s reliance on 
@@ -41,7 +38,7 @@ coupling. It’s a common transitional setup or simplification in smaller projec
 * We want to scale horizontally in the future.
 * We want to keep services separate for testing/deployment purposes.
 * We have one database for now, but possibly modularized.
-* The system fetches commit data from GitHub and similar services, stores it, and renders reports/UI.
+* The system fetches commit data from GitHub and similar services, stores it, and renders reports.
 
 ---
 
@@ -142,7 +139,9 @@ an external API_", would only affect a few small areas.
 
 Currently:
 
-* `GitHubConnector::get()` fetches commits from GitHub and calls `saveCommits()` to insert into the **database** (via `Commit::insertOrIgnore`).
+* `GitHubConnector::get()` fetches commits from GitHub and calls `saveCommits()` to insert into the database (via `Commit::insertOrIgnore`).
+* `GitHubConnector::view()` calls `getCommits()` which fetches commits from the database (via `Commit::where(...)`).
+
 
 Now we have to:
 
