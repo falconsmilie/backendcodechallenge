@@ -4,7 +4,7 @@ use App\Controllers\VersionHistoryController;
 
 require_once __DIR__ . '/../bootstrap/bootstrap.php';
 
-// this is really hacky, most frameworks are going to come with routing
+// TODO: this is really hacky, most frameworks are going to come with routing, and validation for the request
 
 $uri = trim(
     parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH),

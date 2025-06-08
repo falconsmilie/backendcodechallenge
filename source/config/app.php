@@ -2,7 +2,7 @@
 
 return [
     'github' => [
-        'base_uri' => 'https://api.github.com/',
+        'api_base_uri' => 'https://api.github.com/',
         'headers' => [
             'user_agent' => 'CommitFetcherApp',
             'accept' => 'application/vnd.github.v3+json',

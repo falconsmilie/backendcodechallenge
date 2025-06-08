@@ -4,7 +4,7 @@ namespace Tests\Unit\Services\GitHub;
 
 use App\Jobs\GitHub\FetchCommitsJob;
 use App\Repositories\MySqlCommitRepository;
-use App\Services\GitHub\GitHubConnector;
+use App\Services\GitHub\GitHubService;
 use GuzzleHttp\Client;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -13,7 +13,7 @@ class GitHubConnectorTest extends TestCase
 {
     private Client $clientMock;
     private MySqlCommitRepository $repositoryMock;
-    private GitHubConnector $connector;
+    private GitHubService $connector;
 
     protected function setUp(): void
     {
@@ -22,7 +22,7 @@ class GitHubConnectorTest extends TestCase
         $this->clientMock = $this->createMock(Client::class);
         $this->repositoryMock = $this->createMock(MySqlCommitRepository::class);
 
-        $this->connector = new GitHubConnector(
+        $this->connector = new GitHubService(
             $this->clientMock,
             $this->repositoryMock,
             'octocat',
@@ -115,7 +115,7 @@ class GitHubConnectorTest extends TestCase
             ->willReturn($expected);
 
         // Use reflection to override new job creation
-        $connector = new class($this->clientMock, $this->repositoryMock, 'octocat', 'hello-world', $job) extends GitHubConnector {
+        $connector = new class($this->clientMock, $this->repositoryMock, 'octocat', 'hello-world', $job) extends GitHubService {
             public function __construct(
                 $client,
                 $commits,

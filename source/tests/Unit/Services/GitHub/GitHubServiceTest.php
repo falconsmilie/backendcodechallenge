@@ -3,7 +3,7 @@
 namespace Tests\Unit\Services\GitHub;
 
 use App\Services\GitHub\GitHubService;
-use App\Services\VersionControlConnectorInterface;
+use App\Services\VersionControlServiceInterface;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -15,7 +15,7 @@ class GitHubServiceTest extends TestCase
         $service = new GitHubService('owner', 'repo');
 
         $this->assertInstanceOf(
-            VersionControlConnectorInterface::class,
+            VersionControlServiceInterface::class,
             $service->getVersionControlService()
         );
     }

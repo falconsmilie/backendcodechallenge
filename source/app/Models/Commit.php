@@ -11,6 +11,12 @@ use Illuminate\Database\Eloquent\Model;
  */
 class Commit extends Model
 {
+    public $timestamps = true;
+
+    protected $casts = [
+        'commit_date' => 'datetime',
+    ];
+
     protected $fillable = [
         'provider',
         'owner',
@@ -23,6 +29,4 @@ class Commit extends Model
         'commit_message',
         'commit_html_url',
     ];
-
-    public $timestamps = true;
 }

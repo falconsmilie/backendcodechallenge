@@ -47,4 +47,5 @@ The credentials are listed in the project's [.env-development](source/.env-devel
 When in the `source` folder, PHPUnit is available at:
 ```
 vendor/bin/phpunit
+vendor/bin/phpunit --coverage-html coverage-report
 ```

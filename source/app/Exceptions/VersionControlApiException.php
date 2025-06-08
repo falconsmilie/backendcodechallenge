@@ -4,6 +4,6 @@ namespace App\Exceptions;
 
 use Exception;
 
-class VersionControlException extends Exception
+class VersionControlApiException extends Exception
 {
 }

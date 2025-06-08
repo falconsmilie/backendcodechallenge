@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Exceptions\VersionControlException;
+use App\Exceptions\VersionControlServiceException;
 use App\Services\GitHub\GitHubService;
 use Exception;
 
@@ -23,9 +23,9 @@ class VersionControlFactory
 
             case 'gitlab':
             case 'bitbucket':
-                throw new VersionControlException($this->provider . ' is not currently supported.');
+                throw new VersionControlServiceException($this->provider . ' is not currently supported.');
         }
 
-        throw new VersionControlException($this->provider . ' is not currently supported.');
+        throw new VersionControlServiceException($this->provider . ' is not currently supported.');
     }
 }

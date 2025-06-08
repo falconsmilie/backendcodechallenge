@@ -1,6 +1,6 @@
 {
     "name": "shane/vcs",
-    "description": "connect to and retrieve VCS code",
+    "description": "connect to and retrieve VCS commit data",
     "type": "project",
     "authors": [
         {

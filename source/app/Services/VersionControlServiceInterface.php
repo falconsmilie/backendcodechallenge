@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-interface VersionControlConnectorInterface
+interface VersionControlServiceInterface
 {
     public function view(int $resultsPerPage = 100): array;
 

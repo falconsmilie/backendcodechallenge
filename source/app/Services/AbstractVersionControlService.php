@@ -2,14 +2,14 @@
 
 namespace App\Services;
 
-use App\Exceptions\VersionControlException;
+use App\Exceptions\VersionControlServiceException;
 
-abstract class AbstractVersionControlService
+abstract class AbstractVersionControlService implements VersionControlServiceInterface
 {
-    abstract public function getVersionControlService(): VersionControlConnectorInterface;
+    abstract public function getVersionControlService(): VersionControlServiceInterface;
 
     /**
-     * @throws VersionControlException
+     * @throws VersionControlServiceException
      */
     public function get(int $count = 100): array
     {

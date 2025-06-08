@@ -2,26 +2,31 @@
 
 namespace App\Services\GitHub;
 
-use App\Exceptions\VersionControlException;
-use App\Jobs\GitHub\FetchCommitsJob;
+use App\Api\GitHub\GitHubApi;
+use App\Exceptions\VersionControlApiException;
+use App\Exceptions\VersionControlServiceException;
+use App\Models\Commit;
+use App\Repositories\CommitRepositoryInterface;
 use App\Repositories\MySqlCommitRepository;
-use App\Services\VersionControlConnectorInterface;
-use GuzzleHttp\Client;
+use App\Services\VersionControlServiceInterface;
+use function Symfony\Component\Clock\now;
 
-class GitHubConnector implements VersionControlConnectorInterface
+class GitHubConnector implements VersionControlServiceInterface
 {
     private const string PROVIDER = 'github';
-    private Client $client;
-    private MySqlCommitRepository $commits;
 
     public function __construct(
-        Client $client,
-        MySqlCommitRepository $commits,
         protected string $owner,
-        protected string $repo
+        protected string $repo,
+        private ?CommitRepositoryInterface $commits = null,
+        private ?GitHubApi $githubApi = null,
     ) {
-        $this->client = $client;
-        $this->commits = $commits;
+        if ($this->commits === null) {
+            $this->commits = new MySqlCommitRepository(new Commit());
+        }
+        if ($this->githubApi === null) {
+            $this->githubApi = new GitHubApi();
+        }
     }
 
     public function view(int $resultsPerPage = 100): array
@@ -45,19 +50,69 @@ class GitHubConnector implements VersionControlConnectorInterface
     }
 
     /**
-     * Things to consider for the future; this should be extracted into a proper job with retries, rate-limiting ...
-     * The job could send events we listen for in the frontend
-     *
-     * @throws VersionControlException
+     * @throws VersionControlServiceException
      */
     public function get(int $count = 100): array
     {
-        return new FetchCommitsJob($this->client, $count)
-            ->handle(
-                self::PROVIDER,
-                $this->owner,
-                $this->repo,
-                config('app.github.requests.fetch_per_page_limit', 100)
-            );
+        $perPage = min($count, config('app.github.requests.fetch_per_page_limit'));
+        $pages = (int) ceil($count / $perPage);
+
+        $commitHashes = [];
+
+        for ($page = 1; $page <= $pages; $page++) {
+
+            $commits = $this->query($count, $page, $perPage, $this->owner, $this->repo);
+
+            foreach ($commits as $commit) {
+                if (isset($commit['sha'])) {
+                    $formatted = $this->formatCommit(
+                        self::PROVIDER,
+                        $this->owner,
+                        $this->repo,
+                        $commit
+                    );
+                    $commitHashes[] = $formatted;
+                }
+            }
+
+            if (count($commitHashes) < $perPage) {
+                break;
+            }
+        }
+
+        $this->commits->saveMany($commitHashes);
+
+        return $commitHashes;
+    }
+
+    protected function formatCommit(string $provider, string $owner, string $repo, array $commit): array
+    {
+        return [
+            'provider' => $provider,
+            'owner' => $owner,
+            'repo' => $repo,
+            'hash' => $commit['sha'],
+            'author' => $commit['commit']['author']['name'] ?? 'Unknown',
+            'author_avatar_url' => $commit['author']['avatar_url'] ?? '',
+            'author_html_url' => $commit['author']['html_url'] ?? '',
+            'commit_date' => $commit['commit']['author']['date'],
+            'commit_message' => $commit['commit']['message'],
+            'commit_html_url' => $commit['html_url'],
+            'created_at' => now(),
+            'updated_at' => now(),
+        ];
+    }
+
+    /**
+     * @throws VersionControlServiceException
+     */
+    private function query(int $count, int $page, mixed $perPage, string $owner, string $repo): array
+    {
+        try {
+            return $this->githubApi->getRecentCommits($owner, $repo, $count, $page, $perPage);
+
+        } catch (VersionControlApiException $e) {
+            throw new VersionControlServiceException($e->getMessage());
+        }
     }
 }

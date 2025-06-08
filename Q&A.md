@@ -29,16 +29,7 @@ to stay within PHPUnit’s mocking.
 ## Imagine this mini-project needs microservices with one single database
 
 Microservices should be **loosely coupled and independently deployable**. Sharing a database introduces 
-coupling. It’s a common transitional setup or simplification in smaller projects.
-
----
-
-###  Assumptions
-
-* We want to scale horizontally in the future.
-* We want to keep services separate for testing/deployment purposes.
-* We have one database for now, but possibly modularized.
-* The system fetches commit data from GitHub and similar services, stores it, and renders reports.
+coupling.
 
 ---
 
@@ -91,7 +82,7 @@ One **PostgreSQL** or **MySQL** instance with at least the following tables:
 
 * `commits` (central table)
 * `services_log` (for debug/errors)
-* Materialized views for reporting
+* If supported, materialized views for reporting
 
 > Each service **accesses the DB through its own repository layer** (no direct cross-service SQL).
 
@@ -118,30 +109,17 @@ One **PostgreSQL** or **MySQL** instance with at least the following tables:
 
 ---
 
-### Technologies
-
-| Component              | Technology                         |
-| ---------------------- | ---------------------------------- |
-| Language               | PHP 8.x                            |
-| Framework              | Slim / Laravel Lumen (lightweight) |
-| Queue (optional)       | Redis Queue / RabbitMQ             |
-| API Gateway (optional) | NGINX reverse proxy                |
-| Tests                  | PHPUnit + Docker CI                |
-| Database               | MySQL or PostgreSQL                |
-| Cache                  | Redis (optional)                   |
-
----
-
 ## How would your solution differ if you had to call another external API to store and receive the commits?
-It would not vary much at all. The logic for storing and retrieving is abstracted into its own service connectors. The 
-public API into the system would not change. Switching from "_saving to a database_" over to "_pushing to and fetching from 
-an external API_", would only affect a few small areas.
+We can create an apiCommitRepository, in the same way the MySqlRepository was created. It would be a simple class;
+
+```php
+
+```
 
 Currently:
 
 * `GitHubConnector::get()` fetches commits from GitHub and calls `saveCommits()` to insert into the database (via `Commit::insertOrIgnore`).
 * `GitHubConnector::view()` calls `getCommits()` which fetches commits from the database (via `Commit::where(...)`).
-
 
 Now we have to:
 

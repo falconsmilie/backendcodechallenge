@@ -2,7 +2,7 @@
 namespace Tests\Unit\Services;
 
 use App\Services\AbstractVersionControlService;
-use App\Services\VersionControlConnectorInterface;
+use App\Services\VersionControlServiceInterface;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -11,7 +11,7 @@ class AbstractVersionControlServiceTest extends TestCase
     #[Test]
     public function testFetchCallsConnector()
     {
-        $connectorMock = $this->createMock(VersionControlConnectorInterface::class);
+        $connectorMock = $this->createMock(VersionControlServiceInterface::class);
         $connectorMock->expects($this->once())
             ->method('get')
             ->with(100)
@@ -33,7 +33,7 @@ class AbstractVersionControlServiceTest extends TestCase
     #[Test]
     public function testViewCallsConnector()
     {
-        $connectorMock = $this->createMock(VersionControlConnectorInterface::class);
+        $connectorMock = $this->createMock(VersionControlServiceInterface::class);
         $connectorMock->expects($this->once())
             ->method('view')
             ->with(50)

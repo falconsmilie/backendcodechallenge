@@ -2,11 +2,13 @@
 
 namespace App\Jobs\GitHub;
 
-use App\Exceptions\VersionControlException;
+use App\Exceptions\VersionControlServiceException;
 use App\Models\Commit;
 use App\Repositories\MySqlCommitRepository;
+use DateMalformedStringException;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
+use function Symfony\Component\Clock\now;
 
 readonly class FetchCommitsJob
 {
@@ -15,7 +17,7 @@ readonly class FetchCommitsJob
     }
 
     /**
-     * @throws VersionControlException
+     * @throws VersionControlServiceException
      */
     public function handle(string $provider, string $owner, string $repo, int $pageLimit = 100): array
     {
@@ -50,7 +52,7 @@ readonly class FetchCommitsJob
     }
 
     /**
-     * @throws VersionControlException
+     * @throws VersionControlServiceException
      */
     protected function query(int $page, int $perPage, string $owner, string $repo): array
     {
@@ -63,13 +65,13 @@ readonly class FetchCommitsJob
             ]);
         } catch (GuzzleException $e) {
             // TODO: log the errors
-            throw new VersionControlException($e->getMessage(), $e->getCode(), $e);
+            throw new VersionControlServiceException($e->getMessage(), $e->getCode(), $e);
         }
 
         $commits = json_decode($response->getBody()->getContents(), true);
 
         if ($commits === null) {
-            throw new VersionControlException(
+            throw new VersionControlServiceException(
                 'Something went wrong reading the '.$owner.'/'.$repo .' repo.'
             );
         }
@@ -90,6 +92,8 @@ readonly class FetchCommitsJob
             'commit_date' => $commit['commit']['author']['date'],
             'commit_message' => $commit['commit']['message'],
             'commit_html_url' => $commit['html_url'],
+            'created_at' => now(),
+            'updated_at' => now(),
         ];
     }
 }

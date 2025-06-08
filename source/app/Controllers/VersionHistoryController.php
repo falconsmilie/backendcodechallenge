@@ -1,7 +1,7 @@
 <?php
 namespace App\Controllers;
 
-use App\Exceptions\VersionControlException;
+use App\Exceptions\VersionControlServiceException;
 use App\Services\VersionControlFactory;
 use Exception;
 
@@ -36,7 +36,7 @@ class VersionHistoryController
                 ->make()
                 ->get(1000);
 
-        } catch (VersionControlException | Exception $e) {
+        } catch (VersionControlServiceException | Exception $e) {
             // TODO: create an acceptable user error message, instead of exposing our internals
             view('fetch-commits', ['message' => $e->getMessage()]);
 
