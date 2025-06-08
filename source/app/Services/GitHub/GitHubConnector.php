@@ -9,6 +9,8 @@ use App\Models\Commit;
 use App\Repositories\CommitRepositoryInterface;
 use App\Repositories\MySqlCommitRepository;
 use App\Services\VersionControlServiceInterface;
+use DateTimeImmutable;
+use DateTimeZone;
 use function Symfony\Component\Clock\now;
 
 class GitHubConnector implements VersionControlServiceInterface
@@ -85,6 +87,9 @@ class GitHubConnector implements VersionControlServiceInterface
         return $commitHashes;
     }
 
+    /**
+     * @throws \DateMalformedStringException
+     */
     protected function formatCommit(string $provider, string $owner, string $repo, array $commit): array
     {
         return [
@@ -98,8 +103,8 @@ class GitHubConnector implements VersionControlServiceInterface
             'commit_date' => $commit['commit']['author']['date'],
             'commit_message' => $commit['commit']['message'],
             'commit_html_url' => $commit['html_url'],
-            'created_at' => now(),
-            'updated_at' => now(),
+            'created_at' => new DateTimeImmutable('now', new DateTimeZone('UTC')),
+            'updated_at' => new DateTimeImmutable('now', new DateTimeZone('UTC')),
         ];
     }
 

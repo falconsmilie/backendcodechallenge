@@ -9,7 +9,7 @@ use PHPUnit\Framework\TestCase;
 class AbstractVersionControlServiceTest extends TestCase
 {
     #[Test]
-    public function testFetchCallsConnector()
+    public function testGetCallsConnector()
     {
         $connectorMock = $this->createMock(VersionControlServiceInterface::class);
         $connectorMock->expects($this->once())

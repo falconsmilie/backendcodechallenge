@@ -2,142 +2,139 @@
 
 namespace Tests\Unit\Services\GitHub;
 
-use App\Jobs\GitHub\FetchCommitsJob;
-use App\Repositories\MySqlCommitRepository;
-use App\Services\GitHub\GitHubService;
-use GuzzleHttp\Client;
+use App\Api\GitHub\GitHubApi;
+use App\Repositories\CommitRepositoryInterface;
+use App\Services\GitHub\GitHubConnector;
+use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 class GitHubConnectorTest extends TestCase
 {
-    private Client $clientMock;
-    private MySqlCommitRepository $repositoryMock;
-    private GitHubService $connector;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->clientMock = $this->createMock(Client::class);
-        $this->repositoryMock = $this->createMock(MySqlCommitRepository::class);
-
-        $this->connector = new GitHubService(
-            $this->clientMock,
-            $this->repositoryMock,
-            'octocat',
-            'hello-world'
-        );
-    }
-
     #[Test]
-    public function view_returns_paginated_commit_data(): void
+    public function testViewReturnsExpectedCommitData(): void
     {
         $_GET['page'] = 2;
 
-        $this->repositoryMock->expects(self::once())
-            ->method('getByProviderGroupedByAuthor')
-            ->with(
-                2,
-                100,
-                'github',
-                'octocat',
-                'hello-world'
-            )
-            ->willReturn(['alice' => [['hash' => 'abc123']]]);
+        $repositoryMock = $this->createMock(CommitRepositoryInterface::class);
+        $repositoryMock->method('getByProviderGroupedByAuthor')
+            ->willReturn([
+                'Chris Cornell' => [['commit_message' => 'Test Commit']]
+            ]);
 
-        $this->repositoryMock->expects(self::once())
-            ->method('countByProvider')
-            ->with('github', 'octocat', 'hello-world')
-            ->willReturn(250);
+        $repositoryMock->method('countByProvider')
+            ->willReturn(150);
 
-        $result = $this->connector->view();
+        $connector = new GitHubConnector('test-owner', 'test-repo', $repositoryMock);
 
-        self::assertSame(2, $result['page']);
-        self::assertSame(250, $result['totalCommits']);
-        self::assertSame(3, $result['totalPages']);
-        self::assertSame(['alice' => [['hash' => 'abc123']]], $result['commits']);
+        $result = $connector->view();
+
+        $this->assertSame(2, $result['page']);
+        $this->assertSame(2, $result['totalPages']);
+        $this->assertSame(150, $result['totalCommits']);
+        $this->assertArrayHasKey('Chris Cornell', $result['commits']);
     }
 
     #[Test]
-    public function view_defaults_to_page_1_if_not_set(): void
+    public function testGetFetchesAndSavesCommits(): void
     {
-        unset($_GET['page']);
+        $owner = 'soundgarden';
+        $repo = 'superunknown';
+        $count = 2;
+        $perPage = 2;
 
-        $this->repositoryMock->expects(self::once())
-            ->method('getByProviderGroupedByAuthor')
-            ->with(
-                1,
-                100,
-                'github',
-                'octocat',
-                'hello-world'
-            )
-            ->willReturn([]);
+        $now = new DateTimeImmutable('2025-06-08T00:00:00Z');
 
-        $this->repositoryMock->expects(self::once())
-            ->method('countByProvider')
-            ->willReturn(0);
+        $rawCommits = [
+            [
+                'sha' => 'abc123',
+                'commit' => [
+                    'author' => [
+                        'name' => 'Chris Cornell',
+                        'date' => '2025-06-08T03:46:12Z',
+                    ],
+                    'message' => 'Black Hole Sun',
+                ],
+                'author' => [
+                    'avatar_url' => 'https://avatars.githubusercontent.com/u/chris',
+                    'html_url' => 'https://github.com/chris',
+                ],
+                'html_url' => 'https://github.com/soundgarden/superunknown/commit/abc123',
+            ],
+            [
+                'sha' => 'def456',
+                'commit' => [
+                    'author' => [
+                        'name' => 'Kim Thayil',
+                        'date' => '2025-06-07T01:00:00Z',
+                    ],
+                    'message' => 'Spoonman riff',
+                ],
+                'author' => [
+                    'avatar_url' => 'https://avatars.githubusercontent.com/u/kim',
+                    'html_url' => 'https://github.com/kim',
+                ],
+                'html_url' => 'https://github.com/soundgarden/superunknown/commit/def456',
+            ],
+        ];
 
-        $result = $this->connector->view();
+        $expectedCommits = [
+            [
+                'provider' => 'github',
+                'owner' => $owner,
+                'repo' => $repo,
+                'hash' => 'abc123',
+                'author' => 'Chris Cornell',
+                'author_avatar_url' => 'https://avatars.githubusercontent.com/u/chris',
+                'author_html_url' => 'https://github.com/chris',
+                'commit_date' => '2025-06-08T03:46:12Z',
+                'commit_message' => 'Black Hole Sun',
+                'commit_html_url' => 'https://github.com/soundgarden/superunknown/commit/abc123',
+                'created_at' => $this->isInstanceOf(DateTimeImmutable::class),
+                'updated_at' => $this->isInstanceOf(DateTimeImmutable::class),
+            ],
+            [
+                'provider' => 'github',
+                'owner' => $owner,
+                'repo' => $repo,
+                'hash' => 'def456',
+                'author' => 'Kim Thayil',
+                'author_avatar_url' => 'https://avatars.githubusercontent.com/u/kim',
+                'author_html_url' => 'https://github.com/kim',
+                'commit_date' => '2025-06-07T01:00:00Z',
+                'commit_message' => 'Spoonman riff',
+                'commit_html_url' => 'https://github.com/soundgarden/superunknown/commit/def456',
+                'created_at' => $this->isInstanceOf(DateTimeImmutable::class),
+                'updated_at' => $this->isInstanceOf(DateTimeImmutable::class),
+            ],
+        ];
 
-        self::assertSame(1, $result['page']);
-        self::assertSame(0, $result['totalCommits']);
-        self::assertSame(0, $result['totalPages']);
-        self::assertSame([], $result['commits']);
-    }
+        $repoMock = $this->createMock(CommitRepositoryInterface::class);
+        $apiMock = $this->createMock(GitHubApi::class);
 
-    #[Test]
-    public function get_invokes_fetch_commits_job_and_returns_result(): void
-    {
-        $expected = [['hash' => 'abc123']];
+        $apiMock->expects($this->once())
+            ->method('getRecentCommits')
+            ->with($owner, $repo, $count, 1, $perPage)
+            ->willReturn($rawCommits);
 
-        if (!function_exists('App\Services\GitHub\config')) {
-            function config(string $key, mixed $default = null): mixed
-            {
-                return 100;
-            }
-        }
+        $repoMock->expects($this->once())
+            ->method('saveMany')
+            ->with($this->callback(function ($commits) use ($expectedCommits): bool {
+                return count($commits) === count($expectedCommits)
+                    && $commits[0]['hash'] === $expectedCommits[0]['hash']
+                    && $commits[1]['hash'] === $expectedCommits[1]['hash']
+                    && $commits[0]['author'] === 'Chris Cornell'
+                    && $commits[1]['author'] === 'Kim Thayil'
+                    && $commits[0]['created_at'] instanceof DateTimeImmutable
+                    && $commits[1]['created_at'] instanceof DateTimeImmutable;
+            }));
 
-        $job = $this->getMockBuilder(FetchCommitsJob::class)
-            ->setConstructorArgs([$this->clientMock, 100])
-            ->onlyMethods(['handle'])
-            ->getMock();
+        $connector = new GitHubConnector($owner, $repo, $repoMock, $apiMock);
 
-        $job->expects(self::once())
-            ->method('handle')
-            ->with(
-                'github',
-                'octocat',
-                'hello-world',
-                100
-            )
-            ->willReturn($expected);
+        $result = $connector->get($count);
 
-        // Use reflection to override new job creation
-        $connector = new class($this->clientMock, $this->repositoryMock, 'octocat', 'hello-world', $job) extends GitHubService {
-            public function __construct(
-                $client,
-                $commits,
-                string $owner,
-                string $repo,
-                private FetchCommitsJob $jobMock
-            ) {
-                parent::__construct($client, $commits, $owner, $repo);
-            }
-
-            public function get(int $count = 100): array
-            {
-                return $this->jobMock->handle(
-                    'github',
-                    $this->owner,
-                    $this->repo
-                );
-            }
-        };
-
-        $result = $connector->get(100);
-
-        self::assertSame($expected, $result);
+        $this->assertCount(2, $result);
+        $this->assertEquals('abc123', $result[0]['hash']);
+        $this->assertEquals('def456', $result[1]['hash']);
     }
 }
