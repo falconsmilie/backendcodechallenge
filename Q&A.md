@@ -18,13 +18,13 @@
     * [Other Potential Improvements](#other-potential-improvements)
 
 ## How were you debugging this mini-project?
-For the most part i was using `var_dump`. In a dedicated working environment I would use PhpStorm IDE with XDebug.
+For the most part i was using `var_dump`. The unit tests were also handy because most of them were written early. In a 
+dedicated working environment I would also use PhpStorm IDE with XDebug.
 
 ## Please give a detailed answer on your approach to test this project
-Due to time constraints, I focused exclusively on unit testing for this feature. Given the application’s reliance on 
-external APIs and database interactions, isolating these dependencies was important. I considered using Mockery but opted 
-to stay within PHPUnit’s mocking. My approach wasn't driven by TDD, but by unit testing aimed at class-level logic, 
-ensuring correct behaviour in isolation.
+Due to time constraints, I focused exclusively on Unit tests. Given the application’s reliance on external APIs and database 
+interactions, isolating these dependencies was important. I considered using Mockery but opted 
+to stay within PHPUnit’s mocking. 
 
 ## Imagine this mini-project needs microservices with one single database
 

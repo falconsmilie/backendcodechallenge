@@ -7,5 +7,8 @@ return [
             'user_agent' => 'CommitFetcherApp',
             'accept' => 'application/vnd.github.v3+json',
         ],
-    ]
+        'requests' => [
+            'fetch_per_page_limit' => 100,
+        ],
+    ],
 ];

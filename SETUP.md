@@ -37,7 +37,7 @@ php database/migrate.php
 ```
 
 ### phpMyAdmin
-For simplicity's sake phpMyAdmin is included.  It can be accessed at:
+For your convenience phpMyAdmin is included.  It can be accessed at:
 
 [http://localhost:8080/](http://localhost:8080/)
 
