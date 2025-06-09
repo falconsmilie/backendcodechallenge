@@ -25,9 +25,8 @@ class GitHubApi implements ProviderApiInterface
 
     /**
      * TODO: This should be a proper job with retries, rate-limiting, events ... calling on demand can take a few
-     *  seconds. There's also a possibility to introduce some caching if we are able to defer for a certain period.
-     *  Depending on the need for up-to-date data, the job could run at any period and the "get" would simply be a
-     *  call to the MySqlCommitRepository.
+     *  seconds. There's also a possibility to introduce caching if we are able to defer for a certain period.
+     *  The job could run at any period and the "get" would simply be a call to the MySqlCommitRepository.
      *
      * @throws VersionControlApiException
      */

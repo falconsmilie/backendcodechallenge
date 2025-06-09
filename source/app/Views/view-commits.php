@@ -63,14 +63,14 @@ if (! count($commits)) {
                                     <?= htmlspecialchars($commit['hash']) ?>
                                 </a>
                             </div>
-                            <div>(<?= $commit['commit_date'] ?>)</div>
+                            <div><?= $commit['commit_date'] ?></div>
                             <div>
                                 <a href="https://<?= $commit['provider']?>.com/<?= $commit['owner'].'/'.$commit['repo'] ?>" target="_blank">
                                     <?= htmlspecialchars($commit['owner']) ?>/<?= htmlspecialchars($commit['repo']) ?>
                                 </a>
                             </div>
                             <div style="padding: 0 5px 5px 15px">
-                                <small><?= htmlspecialchars($commit['commit_message']) ?></small>
+                                <small style="word-break: break-word"><?= htmlspecialchars($commit['commit_message']) ?></small>
                             </div>
                         </div>
 

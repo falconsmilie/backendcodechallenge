@@ -11,7 +11,6 @@ use App\Repositories\MySqlCommitRepository;
 use App\Services\VersionControlServiceInterface;
 use DateTimeImmutable;
 use DateTimeZone;
-use function Symfony\Component\Clock\now;
 
 class GitHubConnector implements VersionControlServiceInterface
 {
@@ -33,7 +32,7 @@ class GitHubConnector implements VersionControlServiceInterface
 
     public function view(int $resultsPerPage = 100): array
     {
-        // TODO: we need to validate the 'page' parameter
+        // TODO: validate the 'page' parameter
         $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
 
         $commits = $this->commits->getByProviderGroupedByAuthor(

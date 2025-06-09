@@ -8,27 +8,26 @@
 
 ## Implementation and Conceptual Questions
 
-Please refer to [Q&A.md](Q&A.md) for responses to implementation and design-related questions.
+Can be found here [Q&A.md](Q&A.md).
 
 ## Running the Application
 
-Ensure you have followed the setup instructions in [SETUP.md](SETUP.md).
+Can be setup here [SETUP.md](SETUP.md).
 
 ## Routes
 
-The root route without parameters returns a basic index page:
+The root route without parameters returns an index page:
 
 [http://localhost:8000](http://localhost:8000)
 
-The application supports both `get` and `view` operations for commits, for any supported provider (currently only GitHub), 
-and for any repository belonging to that provider.
+The application supports both `get` and `view` operations for commits, for any supported provider, and for any 
+repository belonging to that provider.
 
 ---
 
 ### GET
 
-The `get` route triggers retrieval of commits from the specified provider, repository owner, and repository name. Its 
-format is:
+The `get` route triggers retrieval of commits from the provider's repository owner and their repository. The format is:
 
 ```
 http://localhost:8000/get/{provider}/{repo-owner}/{repo-name}
@@ -38,7 +37,6 @@ http://localhost:8000/get/{provider}/{repo-owner}/{repo-name}
 
 - http://localhost:8000/get/github/nodejs/node
 - http://localhost:8000/get/github/Circunomics/hiring_backendcodechallenge
-- http://localhost:8000/get/github/falconsmilie/Raspberry-Pi-3-Weather
 
 | Parameter     | Required | Description                                                   |
 |---------------|:--------:|---------------------------------------------------------------|
@@ -51,7 +49,8 @@ Invalid or misspelled repository names will return an appropriate exception mess
 parameters) redirect to the index route.
 
 > [!NOTE]
-> During development, i thought about implementing this as a scheduled job, rather than on-demand.
+> During development, i thought about implementing this as a scheduled job, rather than on-demand. I explain more in
+> the code.
 
 ---
 

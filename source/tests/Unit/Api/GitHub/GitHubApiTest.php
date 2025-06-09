@@ -17,7 +17,6 @@ class GitHubApiTest extends TestCase
 
     protected function setUp(): void
     {
-        // Create a mock of the GuzzleHttp\Client
         $this->mockClient = $this->createMock(Client::class);
     }
 
