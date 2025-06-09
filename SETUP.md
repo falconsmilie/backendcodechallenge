@@ -14,7 +14,7 @@ git clone git@github.com:falconsmilie/Circunomics-hiring_backendcodechallenge_sh
 ```
 
 ## Setup Dependencies
-Run the following `composer` command from the `source` folder of the application. This will also create the `.env` for
+Run the following `composer` command from the `source/` folder of the application. This will also create the `.env` for
 the application.
 
 ```
@@ -22,7 +22,7 @@ composer install
 ```
 
 ## Build and Run Docker Containers
-Run the following `docker-compose` commands from the `source` folder of the application.
+Run the following `docker-compose` commands from the `source/` folder of the application.
 
 ```
 docker-compose build
@@ -44,7 +44,7 @@ For your convenience phpMyAdmin is included.  It can be accessed at:
 The credentials are listed in the project's [.env-development](source/.env-development) file.
 
 ## PHPUnit
-When in the `source` folder, PHPUnit is available at:
+When in the `source/` folder, PHPUnit is available at:
 ```
 vendor/bin/phpunit
 vendor/bin/phpunit --coverage-html coverage-report

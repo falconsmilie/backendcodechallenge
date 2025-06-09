@@ -17,9 +17,9 @@ abstract class AbstractVersionControlService implements VersionControlServiceInt
             ->get($count);
     }
 
-    public function view(int $resultsPerPage = 100): array
+    public function view(int $page = 1, int $resultsPerPage = 100): array
     {
         return $this->getVersionControlService()
-            ->view($resultsPerPage);
+            ->view($page, $resultsPerPage);
     }
 }

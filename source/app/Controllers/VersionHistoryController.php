@@ -21,11 +21,14 @@ class VersionHistoryController
      */
     public function view(): void
     {
+        // imagine we do some validation here ...
+        $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
+
         view(
             'view-commits',
             new VersionControlFactory($this->provider, $this->owner, $this->repo)
                 ->make()
-                ->view(10)
+                ->view($page, 12)
         );
     }
 
@@ -43,6 +46,6 @@ class VersionHistoryController
             return;
         }
 
-        view('fetch-commits', ['message' => 'Commits fetched and stored successfully.']);
+        view('get-commits', ['message' => 'Commits fetched and stored successfully.']);
     }
 }

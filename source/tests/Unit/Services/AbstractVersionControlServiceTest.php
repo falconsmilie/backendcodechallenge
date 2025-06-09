@@ -46,7 +46,7 @@ class AbstractVersionControlServiceTest extends TestCase
             ->method('getVersionControlService')
             ->willReturn($connectorMock);
 
-        $result = $serviceMock->view(50);
+        $result = $serviceMock->view(1, 50);
 
         $this->assertSame(['page1', 'page2'], $result);
     }

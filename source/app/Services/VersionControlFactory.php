@@ -23,9 +23,9 @@ class VersionControlFactory
 
             case 'gitlab':
             case 'bitbucket':
-                throw new VersionControlServiceException($this->provider . ' is not currently supported.');
+                break;
         }
 
-        throw new VersionControlServiceException($this->provider . ' is not currently supported.');
+        throw new VersionControlServiceException($this->provider.' is not currently supported.');
     }
 }

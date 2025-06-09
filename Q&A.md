@@ -3,12 +3,10 @@
 - [How were you debugging this mini-project?](#how-were-you-debugging-this-mini-project)
 - [Please give a detailed answer on your approach to test this project](#please-give-a-detailed-answer-on-your-approach-to-test-this-project)
 - [Imagine this mini-project needs microservices with one single database](#imagine-this-mini-project-needs-microservices-with-one-single-database)
-    * [Assumptions](#assumptions)
     * [Suggested Microservices](#microservices)
     * [Database Design](#database)
     * [Communication Between Services](#communication-between-services)
     * [Deployment Layout](#deployment-layout)
-    * [Technologies](#technologies)
     * [Considerations](#considerations)
 - [How would your solution differ if you had to call another external API to store and receive the commits](#how-would-your-solution-differ-if-you-had-to-call-another-external-api-to-store-and-receive-the-commits)
     * [What Would Change](#what-would-change)
@@ -60,7 +58,7 @@ coupling.
 
 3. **CommitQueryService**
 
-    * Exposes endpoints for reading/stats.
+    * Exposes endpoints for reading.
     * Optimized for read patterns (caching, pagination).
     * No write access to DB.
 
@@ -211,7 +209,7 @@ new VersionControlFactory($this->provider, $this->owner, $this->repo)
     ->get();
 ```
 
-Because the **connector is encapsulated**, and there is a well-defined **separation of concerns**, we’re simply swapping DB 
+Because the **Repository is encapsulated**, and there is a well-defined **separation of concerns**, we’re simply swapping DB 
 logic for HTTP logic.
 
 ---

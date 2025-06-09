@@ -5,77 +5,98 @@ namespace Tests\Unit\Api\GitHub;
 use App\Api\GitHub\GitHubApi;
 use App\Exceptions\VersionControlApiException;
 use GuzzleHttp\Client;
-use GuzzleHttp\Exception\GuzzleException;
+use GuzzleHttp\Exception\RequestException;
+use GuzzleHttp\Handler\MockHandler;
+use GuzzleHttp\HandlerStack;
+use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
-use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
-use Psr\Http\Message\StreamInterface;
 
 class GitHubApiTest extends TestCase
 {
-    private Client&MockObject $mockClient;
-
-    protected function setUp(): void
+    public function testMostRecentCommitsReturnsValidData(): void
     {
-        $this->mockClient = $this->createMock(Client::class);
-    }
-
-    public function testGetRecentCommitsReturnsArrayOnSuccess(): void
-    {
-        $jsonData = [
-            ['sha' => '123', 'commit' => ['message' => 'Initial commit']],
-            ['sha' => '456', 'commit' => ['message' => 'Second commit']],
+        $fakeCommits = [
+            [
+                'sha' => 'abc123',
+                'commit' => [
+                    'author' => [
+                        'name' => 'Chris Cornell',
+                        'date' => '2025-06-08T03:46:12Z',
+                    ],
+                    'message' => 'Black Hole Sun',
+                ],
+                'author' => [
+                    'avatar_url' => 'https://avatars.githubusercontent.com/u/chris',
+                    'html_url' => 'https://github.com/chris',
+                ],
+                'html_url' => 'https://github.com/soundgarden/superunknown/commit/abc123',
+            ],
         ];
-        $jsonString = json_encode($jsonData);
 
-        $mockResponse = $this->createMock(Response::class);
-        $mockStream = $this->createMock(StreamInterface::class);
-        $mockStream->method('getContents')->willReturn($jsonString);
-        $mockResponse->method('getBody')->willReturn($mockStream);
+        $mock = new MockHandler([
+            new Response(200, [], json_encode($fakeCommits)),
+        ]);
 
-        $this->mockClient->expects($this->once())
-            ->method('get')
-            ->with('repos/owner/repo/commits', ['query' => ['per_page' => 100, 'page' => 1]])
-            ->willReturn($mockResponse);
+        $handlerStack = HandlerStack::create($mock);
+        $client = new Client(['handler' => $handlerStack]);
 
-        $api = new GitHubApi($this->mockClient);
+        $api = new GitHubApi($client);
 
-        $result = $api->getRecentCommits('owner', 'repo', 100, 1, 100);
+        $result = $api->mostRecentCommits('soundgarden', 'superunknown');
 
-        $this->assertSame($jsonData, $result);
+        $this->assertIsArray($result);
+        $this->assertCount(1, $result);
+        $this->assertSame('abc123', $result[0]['sha']);
     }
 
-    public function testGetRecentCommitsThrowsExceptionWhenGuzzleThrows(): void
+    public function testMostRecentCommitsThrowsOnNon200(): void
     {
-        $this->mockClient->method('get')->willThrowException(
-            new class('error message', 500) extends \Exception implements GuzzleException {}
-        );
+        $mock = new MockHandler([
+            new Response(500),
+        ]);
 
-        $api = new GitHubApi($this->mockClient);
+        $client = new Client([
+            'handler' => HandlerStack::create($mock),
+            'http_errors' => false
+        ]);
+
+        $api = new GitHubApi($client);
 
         $this->expectException(VersionControlApiException::class);
-        $this->expectExceptionMessage('error message');
+        $this->expectExceptionMessage('GitHub says: 500');
 
-        $api->getRecentCommits('owner', 'repo');
+        $api->mostRecentCommits('soundgarden', 'superunknown');
     }
 
-    public function testGetRecentCommitsThrowsExceptionOnInvalidJson(): void
+    public function testMostRecentCommitsThrowsOnInvalidJson(): void
     {
-        $invalidJson = 'invalid json';
+        $mock = new MockHandler([
+            new Response(200, [], '{not-json'),
+        ]);
 
-        $mockStream = $this->createMock(StreamInterface::class);
-        $mockStream->method('getContents')->willReturn($invalidJson);
-
-        $mockResponse = $this->createMock(Response::class);
-        $mockResponse->method('getBody')->willReturn($mockStream);
-
-        $this->mockClient->method('get')->willReturn($mockResponse);
-
-        $api = new GitHubApi($this->mockClient);
+        $client = new Client(['handler' => HandlerStack::create($mock)]);
+        $api = new GitHubApi($client);
 
         $this->expectException(VersionControlApiException::class);
-        $this->expectExceptionMessageMatches('/Something went wrong reading/');
+        $api->mostRecentCommits('soundgarden', 'superunknown');
+    }
 
-        $api->getRecentCommits('owner', 'repo');
+    public function testMostRecentCommitsThrowsOnGuzzleException(): void
+    {
+        $mock = new MockHandler([
+            new RequestException(
+                'Request failed',
+                new Request('GET', 'repos/soundgarden/superunknown/commits')
+            ),
+        ]);
+
+        $client = new Client(['handler' => HandlerStack::create($mock)]);
+        $api = new GitHubApi($client);
+
+        $this->expectException(VersionControlApiException::class);
+        $this->expectExceptionMessage('Request failed');
+
+        $api->mostRecentCommits('soundgarden', 'superunknown');
     }
 }
