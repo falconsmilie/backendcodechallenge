@@ -12,7 +12,7 @@ Can be found here [Q&A.md](Q&A.md).
 
 ## Running the Application
 
-Can be setup here [SETUP.md](SETUP.md).
+Can be setup from here [SETUP.md](SETUP.md).
 
 ## Routes
 

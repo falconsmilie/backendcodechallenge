@@ -28,7 +28,7 @@ class VersionHistoryController
             'view-commits',
             new VersionControlFactory($this->provider, $this->owner, $this->repo)
                 ->make()
-                ->view($page, 12)
+                ->view($page, 20)
         );
     }
 

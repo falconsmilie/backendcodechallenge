@@ -108,9 +108,11 @@ One **PostgreSQL** or **MySQL** instance with at least the following tables:
 ---
 
 ## How would your solution differ if you had to call another external API to store and receive the commits?
-We could adapt the existing [GitHubApiConnector](source/app/Services/GitHub/GitHubConnector.php) (or create a new class) 
-to implement the `CommitViewInterface` and `CommitSaveInterface`. Then migrate the methods in `MySqlCommitRepository` 
-to the `GitHubApiConnector` to make HTTP requests, instead of accessing the database.
+We may need to update the [GitHubApi](source/app/Api/GitHub/GitHubApi.php) depending on *where* the external API is. 
+In any case though, we could adapt the existing [GitHubApiGetter](source/app/Services/GitHub/GitHubApiGetter.php) 
+(or create a new class) to implement the `CommitViewInterface` and `CommitSaveInterface`. Then migrate and refactor the 
+methods from `MySqlCommitRepository` to the `GitHubApiConnector` to make HTTP requests (from the API), instead of 
+accessing the database.
 
 ---
 
@@ -134,13 +136,9 @@ With something like:
 ```php
 public function saveMany(array $commits): void
 {
-    $response = $this->client->post('https://external-api.example.com/commits', [
-        'json' => $commits,
-    ]);
+    $response = $this->gitHubApi->post($commits);
 
-    if ($response->getStatusCode() !== 200) {
-        throw new VersionControlException('Failed to store commits externally.');
-    }
+    return formatForConsumer($response);
 }
 ```
 
@@ -153,7 +151,7 @@ We’re now pushing commits **via HTTP** instead of writing them to a DB.
 These are currently querying the local database:
 
 ```php
-public function getByProviderGroupedByAuthor(int $page, int $resultsPerPage): Collection
+public function getByProviderGroupedByAuthor(int $page, int $resultsPerPage): array
 {
     return Commit::where(...)->get()->groupBy('author');
 }
@@ -167,20 +165,11 @@ public function countByProvider(): int
 We now make external API GET requests for both methods. For example:
 
 ```php
-public function getByProviderGroupedByAuthor(int $page, int $resultsPerPage): Collection
+public function getByProviderGroupedByAuthor(int $page, int $resultsPerPage): array
 {
-    $response = $this->client->get("https://external-api.example.com/commits", [
-        'query' => [
-            'owner' => $this->owner,
-            'repo' => $this->repo,
-            'page' => $page,
-            'per_page' => $resultsPerPage,
-        ],
-    ]);
+    $response = $this->gitHubApi->get($this->owner, $this->repo, $page, $resultsPerPage);
 
-    $data = json_decode($response->getBody()->getContents(), true);
-
-    return collect($data)->groupBy('author');
+    return formatForConsumer($response);
 }
 ```
 
