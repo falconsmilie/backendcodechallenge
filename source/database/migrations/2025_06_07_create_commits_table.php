@@ -3,7 +3,7 @@
 use Illuminate\Database\Capsule\Manager as Capsule;
 use Illuminate\Database\Schema\Blueprint;
 
-// ⚠️ DANGEROUS in production — ensure you're not losing data
+// DANGEROUS in production
 Capsule::schema()->dropIfExists('commits');
 
 Capsule::schema()->create('commits', function (Blueprint $table): void {

@@ -30,7 +30,8 @@ docker-compose up -d
 ```
 
 ## Run Database Migration
-From a terminal within your `app` container run the following command to setup the database tables.
+From a terminal within your `app` container run the following command to setup the database tables. This command will drop
+the table if it exists, which is handy for resetting the database during development.
 
 ```
 php database/migrate.php
