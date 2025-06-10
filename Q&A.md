@@ -110,7 +110,7 @@ One **PostgreSQL** or **MySQL** instance with at least the following tables:
 ## How would your solution differ if you had to call another external API to store and receive the commits?
 We may need to update the [GitHubApi](source/app/Api/GitHub/GitHubApi.php) depending on *where* the external API is. 
 In any case though, we could adapt the existing [GitHubApiGetter](source/app/Services/GitHub/GitHubApiGetter.php) 
-(or create a new class) to implement the `CommitViewInterface` and `CommitSaveInterface`. Then migrate and refactor the 
+(or create a new class) to implement `CommitViewInterface` and `CommitSaveInterface`. Then, migrate and refactor the 
 methods from `MySqlCommitRepository` to the `GitHubApiConnector` to make HTTP requests (from the API), instead of 
 accessing the database.
 
