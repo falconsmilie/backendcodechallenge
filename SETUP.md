@@ -35,6 +35,7 @@ From a terminal within your `app` container run the following command to setup t
 ```
 php database/migrate.php
 ```
+NB if you get connection refused errors for this command, please wait a few seconds and try again.
 
 ### phpMyAdmin
 For your convenience phpMyAdmin is included.  It can be accessed at:
