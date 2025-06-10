@@ -11,7 +11,7 @@ class MySqlCommitRepository implements CommitSaveInterface, CommitViewInterface
 {
     private const int SAVE_MANY_CHUNK_SIZE = 500;
 
-    public function __construct(private Commit $commit) {}
+    public function __construct(private readonly Commit $commit) {}
 
     public function saveMany(array $commits): void
     {

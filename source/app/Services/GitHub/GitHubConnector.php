@@ -44,7 +44,6 @@ class GitHubConnector implements VersionControlServiceInterface
 
     public function view(int $page = 1, int $resultsPerPage = 100): array
     {
-
         $commits = $this->commitViewer->getByProviderGroupedByAuthor(
             $page,
             $resultsPerPage,

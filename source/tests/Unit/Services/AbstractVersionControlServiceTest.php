@@ -36,7 +36,7 @@ class AbstractVersionControlServiceTest extends TestCase
         $connectorMock = $this->createMock(VersionControlServiceInterface::class);
         $connectorMock->expects($this->once())
             ->method('view')
-            ->with(50)
+            ->with(1, 50)
             ->willReturn(['page1', 'page2']);
 
         $serviceMock = $this->getMockBuilder(AbstractVersionControlService::class)

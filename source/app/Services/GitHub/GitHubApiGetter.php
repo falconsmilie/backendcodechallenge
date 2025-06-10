@@ -22,7 +22,7 @@ readonly class GitHubApiGetter implements CommitGetInterface
 
         for ($page = 1; $page <= $pages; $page++) {
 
-            $commits = $this->api->mostRecentCommits($this->owner, $this->repo, $count, $page, $perPage);
+            $commits = $this->api->mostRecentCommits($this->owner, $this->repo, $page, $perPage);
 
             foreach ($commits as $commit) {
                 if (isset($commit['sha'])) {

@@ -23,7 +23,7 @@ class GitHubApiGetterTest extends TestCase
         $this->api
             ->expects($this->exactly(2))
             ->method('mostRecentCommits')
-            ->willReturnCallback(function ($owner, $repo, $count, $page, $perPage) {
+            ->willReturnCallback(function ($owner, $repo, $page, $perPage) {
                 if ($page === 1) {
                     return [
                         ['sha' => 'abc123', 'commit' => []],
@@ -55,7 +55,7 @@ class GitHubApiGetterTest extends TestCase
     {
         $this->api->expects($this->once())
             ->method('mostRecentCommits')
-            ->with('aliceinchains', 'dirt', 4, 1, 3)
+            ->with('aliceinchains', 'dirt', 1, 3)
             ->willReturn([
                 ['sha' => 'sha1'], ['sha' => 'sha2']
             ]); // only 2 commits < perPage (3), should break loop
