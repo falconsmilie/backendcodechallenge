@@ -21,8 +21,8 @@ dedicated working environment I would also use PhpStorm IDE with XDebug.
 
 ## Please give a detailed answer on your approach to test this project
 Due to time constraints, I focused exclusively on Unit tests. Given the application’s reliance on external APIs and database 
-interactions, isolating these dependencies was important. I considered using Mockery but opted 
-to stay within PHPUnit’s mocking. 
+interactions, isolating these dependencies was important. I considered using Mockery but opted to stay within PHPUnit’s 
+mocking.
 
 ## Imagine this mini-project needs microservices with one single database
 
@@ -89,7 +89,7 @@ One **PostgreSQL** or **MySQL** instance with at least the following tables:
 ### Communication Between Services
 
 * Use **REST** or **gRPC** for internal service-to-service calls.
-* Use **message queues** (RabbitMQ / Redis Streams / Kafka) for async fetching, commit ingestion, or retries.
+* Use **message queues** for async fetching, commit ingestion, or retries.
 
 ---
 
@@ -103,7 +103,7 @@ One **PostgreSQL** or **MySQL** instance with at least the following tables:
   /web-gateway         # UI + routes
 ```
 
-> Use **Docker containers** per service. Define their own `Dockerfile`, `composer.json`, and tests.
+> Use **containers** per service. Define their own `Dockerfile`, `composer.json`, and tests.
 
 ---
 
@@ -111,7 +111,7 @@ One **PostgreSQL** or **MySQL** instance with at least the following tables:
 We may need to update the [GitHubApi](source/app/Api/GitHub/GitHubApi.php) depending on *where* the external API is. 
 In any case though, we could adapt the existing [GitHubApiGetter](source/app/Services/GitHub/GitHubApiGetter.php) 
 (or create a new class) to implement `CommitViewInterface` and `CommitSaveInterface`. Then, migrate and refactor the 
-methods from `MySqlCommitRepository` to the `GitHubApiConnector` to make HTTP requests (from the API), instead of 
+methods from `MySqlCommitRepository` to the `GitHubApiGetter` to make HTTP requests (from the API), instead of 
 accessing the database.
 
 ---
@@ -142,7 +142,7 @@ public function saveMany(array $commits): void
 }
 ```
 
-We’re now pushing commits **via HTTP** instead of writing them to a DB.
+We’re now pushing commits **via HTTP** instead of writing them to a database.
 
 ---
 
@@ -192,5 +192,4 @@ swapping database logic for HTTP logic.
 
 ### Other Potential Improvements
 
-* If the external API supports **batching**, respect rate limits using retries or Guzzle’s `handler stack`.
 * Consider caching external results to reduce API calls.
