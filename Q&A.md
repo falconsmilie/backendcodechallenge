@@ -10,8 +10,8 @@
     * [Considerations](#considerations)
 - [How would your solution differ if you had to call another external API to store and receive the commits](#how-would-your-solution-differ-if-you-had-to-call-another-external-api-to-store-and-receive-the-commits)
     * [What Would Change](#what-would-change)
-        + [1. Replace `saveCommits()`](#1-replace-savecommits)
-        + [2. Update `getCommits()` and `countCommits()`](#2-update-getcommits-and-countcommits)
+        + [1. Refactor `saveMany()`](#1-refactor-savemany)
+        + [2. Refactor `getByProviderGroupedByAuthor()` and `countByProvider()`](#2-refactor-getbyprovidergroupedbyauthor-and-countbyprovider)
         + [3. Leave the Controller and Service Layer Alone](#3-leave-the-controller-and-service-layer-alone)
     * [Other Potential Improvements](#other-potential-improvements)
 
@@ -108,32 +108,20 @@ One **PostgreSQL** or **MySQL** instance with at least the following tables:
 ---
 
 ## How would your solution differ if you had to call another external API to store and receive the commits?
-We can create an apiCommitRepository, in the same way the MySqlRepository was created. It would be a simple class;
-
-```php
-
-```
-
-Currently:
-
-* `GitHubConnector::get()` fetches commits from GitHub and calls `saveCommits()` to insert into the database (via `Commit::insertOrIgnore`).
-* `GitHubConnector::view()` calls `getCommits()` which fetches commits from the database (via `Commit::where(...)`).
-
-Now we have to:
-
-* Send commits to an external API (instead of saving to DB).
-* Fetch commits from that API (instead of querying the DB).
+We could adapt the existing [GitHubApiConnector](source/app/Services/GitHub/GitHubConnector.php) (or create a new class) 
+to implement the `CommitViewInterface` and `CommitSaveInterface`. Then migrate the methods in `MySqlCommitRepository` 
+to the `GitHubApiConnector` to make HTTP requests, instead of accessing the database.
 
 ---
 
 ### What Would Change
 
-#### 1. Replace `saveCommits()`
+#### 1. Refactor `saveMany()`
 
 Replace:
 
 ```php
-protected function saveCommits(array $commits): void
+public function saveMany(array $commits): void
 {
     collect($commits)
         ->chunk(500)
@@ -144,7 +132,7 @@ protected function saveCommits(array $commits): void
 With something like:
 
 ```php
-protected function saveCommits(array $commits): void
+public function saveMany(array $commits): void
 {
     $response = $this->client->post('https://external-api.example.com/commits', [
         'json' => $commits,
@@ -160,17 +148,17 @@ We’re now pushing commits **via HTTP** instead of writing them to a DB.
 
 ---
 
-#### 2. Update `getCommits()` and `countCommits()`
+#### 2. Refactor `getByProviderGroupedByAuthor()` and `countByProvider()`
 
 These are currently querying the local database:
 
 ```php
-public function getCommits(int $page, int $resultsPerPage): Collection
+public function getByProviderGroupedByAuthor(int $page, int $resultsPerPage): Collection
 {
     return Commit::where(...)->get()->groupBy('author');
 }
 
-public function countCommits(): int
+public function countByProvider(): int
 {
     return Commit::count();
 }
@@ -179,7 +167,7 @@ public function countCommits(): int
 We now make external API GET requests for both methods. For example:
 
 ```php
-public function getCommits(int $page, int $resultsPerPage): Collection
+public function getByProviderGroupedByAuthor(int $page, int $resultsPerPage): Collection
 {
     $response = $this->client->get("https://external-api.example.com/commits", [
         'query' => [
@@ -194,7 +182,6 @@ public function getCommits(int $page, int $resultsPerPage): Collection
 
     return collect($data)->groupBy('author');
 }
-
 ```
 
 ---
@@ -209,8 +196,8 @@ new VersionControlFactory($this->provider, $this->owner, $this->repo)
     ->get();
 ```
 
-Because the **Repository is encapsulated**, and there is a well-defined **separation of concerns**, we’re simply swapping DB 
-logic for HTTP logic.
+Because the **Repositories are encapsulated**, and there is a well-defined **separation of concerns**, we’re simply 
+swapping database logic for HTTP logic.
 
 ---
 
