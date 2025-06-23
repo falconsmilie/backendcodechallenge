@@ -1,14 +1,14 @@
 <?php
 namespace App\Controllers;
 
-use App\Exceptions\VersionControlServiceException;
-use App\Services\VersionControlFactory;
+use App\Exceptions\CommitServiceException;
+use App\Services\CommitFactory;
 use Exception;
 
 class VersionHistoryController
 {
-    private const int PAGE = 1;
-    private const int RESULTS_PER_PAGE = 12;
+    private const int PAGE_LIMIT = 1;
+    private const int RESULTS_PER_PAGE = 100;
     private const int GET_COMMIT_COUNT = 1000;
 
     public function __construct(protected string $provider, protected string $owner, protected string $repo)
@@ -27,18 +27,18 @@ class VersionHistoryController
     {
         // imagine we do some validation here wth these query params ...
         $page = isset($_GET['page'])
-            ? max(1, (int)$_GET['page'])
-            : self::PAGE;
+            ? max(self::PAGE_LIMIT, (int)$_GET['page'])
+            : self::PAGE_LIMIT;
 
         $resultsPerPage = isset($_GET['results_per_page'])
-            ? max(1, (int)$_GET['results_per_page'])
+            ? min(self::RESULTS_PER_PAGE, (int)$_GET['results_per_page'])
             : self::RESULTS_PER_PAGE;
 
         view(
             'view-commits',
-            new VersionControlFactory($this->provider, $this->owner, $this->repo)
+            new CommitFactory($this->provider, $this->owner, $this->repo)
                 ->make()
-                ->view($page, $resultsPerPage)
+                ->viewCommits($page, $resultsPerPage)
         );
     }
 
@@ -46,15 +46,15 @@ class VersionHistoryController
     {
         // imagine we do some validation here wth these query params ...
         $count = isset($_GET['commit_count'])
-            ? max(1, (int)$_GET['commit_count'])
+            ? max( self::GET_COMMIT_COUNT, (int)$_GET['commit_count'])
             : self::GET_COMMIT_COUNT;
 
         try {
-            new VersionControlFactory($this->provider, $this->owner, $this->repo)
+            new CommitFactory($this->provider, $this->owner, $this->repo)
                 ->make()
-                ->get($count);
+                ->getCommits($count);
 
-        } catch (VersionControlServiceException | Exception $e) {
+        } catch (CommitServiceException | Exception $e) {
             // TODO: create an acceptable user error message, instead of exposing our internals
             view('fetch-commits', ['message' => $e->getMessage()]);
 

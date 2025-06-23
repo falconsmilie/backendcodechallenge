@@ -3,7 +3,7 @@
 namespace App\Api\GitHub;
 
 use App\Api\ProviderApiInterface;
-use App\Exceptions\VersionControlApiException;
+use App\Exceptions\CommitApiException;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
 use JsonException;
@@ -28,7 +28,7 @@ class GitHubApi implements ProviderApiInterface
      *  take a few seconds. There's also a possibility to introduce caching if we are able to defer for a certain period.
      *  The job could run at any period and the public "get route" could simply be a call to the MySqlCommitRepository.
      *
-     * @throws VersionControlApiException
+     * @throws CommitApiException
      */
     public function mostRecentCommits(
         string $owner,
@@ -47,11 +47,11 @@ class GitHubApi implements ProviderApiInterface
             ]);
         } catch (GuzzleException $e) {
             // TODO: log the errors
-            throw new VersionControlApiException($e->getMessage(), $e->getCode(), $e);
+            throw new CommitApiException($e->getMessage(), $e->getCode(), $e);
         }
 
         if ($response->getStatusCode() !== 200) {
-            throw new VersionControlApiException("GitHub says: {$response->getStatusCode()}");
+            throw new CommitApiException("GitHub says: {$response->getStatusCode()}");
         }
 
         $body = $response->getBody()->getContents();
@@ -59,11 +59,11 @@ class GitHubApi implements ProviderApiInterface
         try {
             $commits = json_decode($body, true, 512, JSON_THROW_ON_ERROR);
         } catch (JsonException $e) {
-            throw new VersionControlApiException($e->getMessage(), $e->getCode(), $e);
+            throw new CommitApiException($e->getMessage(), $e->getCode(), $e);
         }
 
         if ($commits === null) {
-            throw new VersionControlApiException(
+            throw new CommitApiException(
                 'Something went wrong reading the '.$owner.'/'.$repo .' repo. The commits returned were null.'
             );
         }

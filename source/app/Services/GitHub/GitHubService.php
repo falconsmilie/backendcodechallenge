@@ -3,15 +3,25 @@
 namespace App\Services\GitHub;
 
 use App\Api\GitHub\GitHubApi;
+use App\DataTransferObjects\CommitDTO;
+use App\Exceptions\CommitApiException;
+use App\Exceptions\CommitRepositoryException;
+use App\Exceptions\CommitServiceException;
 use App\Models\Commit;
 use App\Repositories\MySqlCommitRepository;
-use App\Services\AbstractVersionControlService;
-use App\Services\VersionControlServiceInterface;
+use App\Services\AbstractCommitService;
+use App\Services\Commit\BufferedCommitSave;
+use DateMalformedStringException;
+use DateTimeImmutable;
+use DateTimeZone;
 
-class GitHubService extends AbstractVersionControlService
+class GitHubService extends AbstractCommitService
 {
-    private GitHubApi $api;
-    private GitHubApiGetter $commitGetter;
+    private const string PROVIDER = 'github';
+    private const int BATCH_INSERT_BUFFER_SIZE = 100;
+    private const int API_RETRIES = 3;
+
+    private GitHubApi $commitGetter;
     private MySqlCommitRepository $commitSaver;
     private MySqlCommitRepository $commitViewer;
 
@@ -19,26 +29,118 @@ class GitHubService extends AbstractVersionControlService
         protected string $owner,
         protected string $repo,
         ?GitHubApi $api = null,
-        ?GitHubApiGetter $apiGetter = null,
         ?MySqlCommitRepository $commitRepository = null
     ) {
-        $this->api = $api ?? new GitHubApi;
-
-        $this->commitGetter = $apiGetter ?? new GitHubApiGetter($this->api, $this->owner, $this->repo);
-
+        $this->commitGetter = $api ?? new GitHubApi;
         $this->commitSaver = $commitRepository ?? new MySqlCommitRepository(new Commit);
-
         $this->commitViewer = $this->commitSaver;
     }
 
-    public function getVersionControlService(): VersionControlServiceInterface
+    /**
+     * @throws CommitServiceException
+     */
+    public function getCommits(int $count = 100): bool
     {
-        return new GitHubConnector(
-            $this->commitGetter,
+        $perPage = min($count, config('app.github.requests.fetch_per_page_limit'));
+        $pages = (int)ceil($count / $perPage);
+
+        $commitSaver = new BufferedCommitSave(
             $this->commitSaver,
-            $this->commitViewer,
+            self::BATCH_INSERT_BUFFER_SIZE
+        );
+
+        return $this->mostRecentCommits($pages, $perPage, $commitSaver);
+    }
+
+    /**
+     * @throws CommitRepositoryException
+     */
+    public function viewCommits(int $page = 1, int $resultsPerPage = 100): array
+    {
+        $commits = $this->commitViewer->getByProviderGroupedByAuthor(
+            $page,
+            $resultsPerPage,
+            self::PROVIDER,
             $this->owner,
             $this->repo
+        );
+
+        $totalCommits = $this->commitViewer->countByProvider(self::PROVIDER, $this->owner, $this->repo);
+
+        $totalPages = (int)ceil($totalCommits / $resultsPerPage);
+
+        return compact('commits', 'page', 'resultsPerPage', 'totalPages', 'totalCommits');
+    }
+
+    /**
+     * @throws CommitServiceException
+     */
+    private function mostRecentCommits(int $pages, int $perPage, callable $processCommit): bool
+    {
+        for ($page = 1; $page <= $pages; $page++) {
+
+            $retries = 0;
+            $commitCount = 0;
+
+            try {
+                $commits = $this->commitGetter->mostRecentCommits($this->owner, $this->repo, $page, $perPage);
+            } catch (CommitApiException $e) {
+                $retries++;
+
+                if ($retries >= self::API_RETRIES) {
+                    throw new CommitServiceException($e->getMessage(), $e->getCode(), $e);
+                }
+            }
+
+            if (empty($commits)) {
+                break;
+            }
+
+            foreach ($commits as $commit) {
+                if (isset($commit['sha'])) {
+                    $commit = $this->format($commit);
+                    $processCommit($commit);
+                    $commitCount++;
+                }
+            }
+
+            if ($commitCount < $perPage) {
+                break;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * @throws CommitServiceException
+     */
+    private function format(array $rawCommit): CommitDTO
+    {
+        try {
+            $now = new DateTimeImmutable('now', new DateTimeZone('UTC'))
+                ->format('Y-m-d H:i:s');
+
+            $commitDate = new DateTimeImmutable($rawCommit['commit']['author']['date'])
+                ->format('Y-m-d H:i:s');
+
+        } catch (DateMalformedStringException $e) {
+            throw new CommitServiceException($e->getMessage(), $e->getCode(), $e);
+        }
+
+        return new CommitDTO(
+            provider: 'github',
+            owner: $this->owner,
+            repo: $this->repo,
+            hash: $rawCommit['sha'],
+            author: $rawCommit['commit']['author']['name'] ?? 'Unknown',
+            authorAvatarUrl: $rawCommit['author']['avatar_url'] ?? null,
+            authorHtmlUrl: $rawCommit['author']['html_url'] ?? null,
+            commitDate: $commitDate,
+            commitMessage: $rawCommit['commit']['message'],
+            commitHtmlUrl: $rawCommit['html_url'],
+            createdAt: $now,
+            updatedAt: $now,
         );
     }
 }

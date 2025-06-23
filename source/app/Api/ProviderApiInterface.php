@@ -2,12 +2,12 @@
 
 namespace App\Api;
 
-use App\Exceptions\VersionControlApiException;
+use App\Exceptions\CommitApiException;
 
 interface ProviderApiInterface
 {
     /**
-     * @throws VersionControlApiException
+     * @throws CommitApiException
      */
     public function mostRecentCommits(
         string $owner,

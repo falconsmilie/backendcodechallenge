@@ -23,7 +23,7 @@ Capsule::schema()->create('commits', function (Blueprint $table): void {
 
     $table->timestamp('commit_date');
     $table->text('commit_message')->nullable();
-    $table->string('commit_html_url');
+    $table->string('commit_html_url')->nullable();
 
     $table->timestamps();
 

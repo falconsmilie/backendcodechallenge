@@ -3,7 +3,7 @@ namespace App\Repositories;
 
 use App\Contracts\CommitSaveInterface;
 use App\Contracts\CommitViewInterface;
-use App\Exceptions\VersionControlRepositoryException;
+use App\Exceptions\CommitRepositoryException;
 use App\Models\Commit;
 use Exception;
 use Illuminate\Database\Eloquent\Builder;
@@ -13,19 +13,19 @@ readonly class MySqlCommitRepository implements CommitSaveInterface, CommitViewI
     public function __construct(private Commit $commit) {}
 
     /**
-     * @throws VersionControlRepositoryException
+     * @throws CommitRepositoryException
      */
     public function saveMany(array $commits): void
     {
         try {
             $this->commit->newQuery()->upsert($commits, ['hash']);
         } catch (Exception $e) {
-            throw new VersionControlRepositoryException($e->getMessage());
+            throw new CommitRepositoryException($e->getMessage());
         }
     }
 
     /**
-     * @throws VersionControlRepositoryException
+     * @throws CommitRepositoryException
      */
     public function getByProviderGroupedByAuthor(
         int $offset,
@@ -36,7 +36,7 @@ readonly class MySqlCommitRepository implements CommitSaveInterface, CommitViewI
     ): array {
 
         if ($offset < 1 || $limit < 1) {
-            throw new VersionControlRepositoryException('Offset and limit must be greater than 0.');
+            throw new CommitRepositoryException('Offset and limit must be greater than 0.');
         }
 
         $query = $this->commit->newQuery()

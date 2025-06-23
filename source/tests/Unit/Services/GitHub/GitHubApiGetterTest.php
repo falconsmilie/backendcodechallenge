@@ -3,7 +3,7 @@
 namespace Tests\Unit\Services\GitHub;
 
 use App\Api\GitHub\GitHubApi;
-use App\Exceptions\VersionControlApiException;
+use App\Exceptions\CommitApiException;
 use App\Services\GitHub\GitHubApiGetter;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -69,10 +69,10 @@ class GitHubApiGetterTest extends TestCase
 
     public function testMostRecentCommitsThrowsWhenApiFails(): void
     {
-        $this->expectException(VersionControlApiException::class);
+        $this->expectException(CommitApiException::class);
 
         $this->api->method('mostRecentCommits')
-            ->willThrowException(new VersionControlApiException('API failure'));
+            ->willThrowException(new CommitApiException('API failure'));
 
         $getter = new GitHubApiGetter($this->api, 'pearljam', 'ten');
         $getter->mostRecentCommits(10, 1, 10);

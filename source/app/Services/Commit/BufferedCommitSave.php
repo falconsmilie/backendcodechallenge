@@ -5,15 +5,16 @@ namespace App\Services\Commit;
 use App\Contracts\CommitSaveInterface;
 use App\DataTransferObjects\CommitDTO;
 
-final class BufferedCommitSaver
+final class BufferedCommitSave
 {
-    /** @var array<int, array<string, mixed>> */
+    private const int MAX_BUFFER_SIZE = 500;
     private array $buffer = [];
 
     public function __construct(
         private readonly CommitSaveInterface $repository,
-        private readonly int $bufferSize
+        private int $bufferSize
     ) {
+        $this->bufferSize = min(self::MAX_BUFFER_SIZE, $bufferSize);
     }
 
     public function __invoke(CommitDTO $dto): void

@@ -3,7 +3,7 @@
 namespace Tests\Unit\Api\GitHub;
 
 use App\Api\GitHub\GitHubApi;
-use App\Exceptions\VersionControlApiException;
+use App\Exceptions\CommitApiException;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Handler\MockHandler;
@@ -63,7 +63,7 @@ class GitHubApiTest extends TestCase
 
         $api = new GitHubApi($client);
 
-        $this->expectException(VersionControlApiException::class);
+        $this->expectException(CommitApiException::class);
         $this->expectExceptionMessage('GitHub says: 500');
 
         $api->mostRecentCommits('soundgarden', 'superunknown');
@@ -78,7 +78,7 @@ class GitHubApiTest extends TestCase
         $client = new Client(['handler' => HandlerStack::create($mock)]);
         $api = new GitHubApi($client);
 
-        $this->expectException(VersionControlApiException::class);
+        $this->expectException(CommitApiException::class);
         $api->mostRecentCommits('soundgarden', 'superunknown');
     }
 
@@ -94,7 +94,7 @@ class GitHubApiTest extends TestCase
         $client = new Client(['handler' => HandlerStack::create($mock)]);
         $api = new GitHubApi($client);
 
-        $this->expectException(VersionControlApiException::class);
+        $this->expectException(CommitApiException::class);
         $this->expectExceptionMessage('Request failed');
 
         $api->mostRecentCommits('soundgarden', 'superunknown');

@@ -2,7 +2,7 @@
 
 namespace Tests\Unit\Repositories;
 
-use App\Exceptions\VersionControlRepositoryException;
+use App\Exceptions\CommitRepositoryException;
 use App\Models\Commit;
 use App\Repositories\MySqlCommitRepository;
 use Illuminate\Support\Collection;
@@ -132,7 +132,7 @@ final class MySqlCommitRepositoryTest extends TestCase
     #[Test]
     public function testGetByProviderGroupedByAuthorThrowsOnInvalidPagination(): void
     {
-        $this->expectException(VersionControlRepositoryException::class);
+        $this->expectException(CommitRepositoryException::class);
         $this->expectExceptionMessage('Offset and limit must be greater than 0.');
 
         $this->repository->getByProviderGroupedByAuthor(0, 0, 'github');

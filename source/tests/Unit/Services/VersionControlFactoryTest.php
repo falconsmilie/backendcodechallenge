@@ -3,7 +3,7 @@
 namespace Tests\Unit\Services;
 
 use App\Services\GitHub\GitHubService;
-use App\Services\VersionControlFactory;
+use App\Services\CommitFactory;
 use Exception;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
@@ -14,7 +14,7 @@ class VersionControlFactoryTest extends TestCase
     #[Test]
     public function testReturnsGithubServiceInstance(): void
     {
-        $factory = new VersionControlFactory('github', 'test-owner', 'test-repo');
+        $factory = new CommitFactory('github', 'test-owner', 'test-repo');
         $service = $factory->make();
 
         $this->assertInstanceOf(GitHubService::class, $service);
@@ -37,7 +37,7 @@ class VersionControlFactoryTest extends TestCase
         $this->expectException(Exception::class);
         $this->expectExceptionMessage("$provider is not currently supported.");
 
-        $factory = new VersionControlFactory($provider, 'test-owner', 'test-repo');
+        $factory = new CommitFactory($provider, 'test-owner', 'test-repo');
         $factory->make();
     }
 }

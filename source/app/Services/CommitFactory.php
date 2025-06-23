@@ -2,11 +2,11 @@
 
 namespace App\Services;
 
-use App\Exceptions\VersionControlServiceException;
+use App\Exceptions\CommitServiceException;
 use App\Services\GitHub\GitHubService;
 use Exception;
 
-class VersionControlFactory
+class CommitFactory
 {
     public function __construct(protected string $provider, protected string $owner, protected string $repo)
     {
@@ -15,7 +15,7 @@ class VersionControlFactory
     /**
      * @throws Exception
      */
-    public function make(): AbstractVersionControlService
+    public function make(): AbstractCommitService
     {
         switch ($this->provider) {
             case 'github':
@@ -26,6 +26,6 @@ class VersionControlFactory
                 break;
         }
 
-        throw new VersionControlServiceException($this->provider.' is not currently supported.');
+        throw new CommitServiceException($this->provider.' is not currently supported.');
     }
 }
