@@ -4,5 +4,5 @@ namespace App\Contracts;
 
 interface CommitGetInterface
 {
-    public function mostRecentCommits(int $count, int $pages, int $perPage): array;
+    public function mostRecentCommits(int $pages, int $perPage, callable $processCommit): bool;
 }

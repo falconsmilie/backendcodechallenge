@@ -5,21 +5,23 @@ use App\Contracts\CommitSaveInterface;
 use App\Contracts\CommitViewInterface;
 use App\Exceptions\VersionControlRepositoryException;
 use App\Models\Commit;
+use Exception;
 use Illuminate\Database\Eloquent\Builder;
 
-class MySqlCommitRepository implements CommitSaveInterface, CommitViewInterface
+readonly class MySqlCommitRepository implements CommitSaveInterface, CommitViewInterface
 {
-    private const int SAVE_MANY_CHUNK_SIZE = 500;
+    public function __construct(private Commit $commit) {}
 
-    public function __construct(private readonly Commit $commit) {}
-
+    /**
+     * @throws VersionControlRepositoryException
+     */
     public function saveMany(array $commits): void
     {
-        collect($commits)
-            ->chunk(self::SAVE_MANY_CHUNK_SIZE)
-            ->each(function ($chunk) {
-                $this->commit->newQuery()->insertOrIgnore($chunk->toArray());
-            });
+        try {
+            $this->commit->newQuery()->upsert($commits, ['hash']);
+        } catch (Exception $e) {
+            throw new VersionControlRepositoryException($e->getMessage());
+        }
     }
 
     /**

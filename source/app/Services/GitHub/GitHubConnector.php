@@ -5,13 +5,13 @@ use App\Contracts\CommitGetInterface;
 use App\Contracts\CommitSaveInterface;
 use App\Contracts\CommitViewInterface;
 use App\Exceptions\VersionControlApiException;
+use App\Services\Commit\BufferedCommitSaver;
 use App\Services\VersionControlServiceInterface;
-use DateTimeImmutable;
-use DateTimeZone;
 
 class GitHubConnector implements VersionControlServiceInterface
 {
     private const string PROVIDER = 'github';
+    private const int BATCH_SAVE_COUNT = 100;
 
     public function __construct(
         private readonly CommitGetInterface $commitGetter,
@@ -24,22 +24,19 @@ class GitHubConnector implements VersionControlServiceInterface
     /**
      * @throws VersionControlApiException
      */
-    public function get(int $count = 100): array
+    public function get(int $count = 100): bool
     {
-        $perPage = min($count, config('app.github.requests.fetch_per_page_limit', 100));
+        $perPage = min($count, config('app.github.requests.fetch_per_page_limit'));
         $pages = (int)ceil($count / $perPage);
 
-        $rawCommits = $this->commitGetter->mostRecentCommits($count, $pages, $perPage);
+        $commitSaver = new BufferedCommitSaver(
+            $this->commitSaver,
+            self::BATCH_SAVE_COUNT,
+            $this->owner,
+            $this->repo
+        );
 
-        $commits = [];
-
-        foreach ($rawCommits as $commit) {
-            $commits[] = $this->formatCommit($commit);
-        }
-
-        $this->commitSaver->saveMany($commits);
-
-        return $commits;
+        return $this->commitGetter->mostRecentCommits($pages, $perPage, $commitSaver);
     }
 
     public function view(int $page = 1, int $resultsPerPage = 100): array
@@ -57,23 +54,5 @@ class GitHubConnector implements VersionControlServiceInterface
         $totalPages = (int)ceil($totalCommits / $resultsPerPage);
 
         return compact('commits', 'page', 'resultsPerPage', 'totalPages', 'totalCommits');
-    }
-
-    private function formatCommit(array $commit): array
-    {
-        return [
-            'provider' => self::PROVIDER,
-            'owner' => $this->owner,
-            'repo' => $this->repo,
-            'hash' => $commit['sha'],
-            'author' => $commit['commit']['author']['name'] ?? 'Unknown',
-            'author_avatar_url' => $commit['author']['avatar_url'] ?? '',
-            'author_html_url' => $commit['author']['html_url'] ?? '',
-            'commit_date' => $commit['commit']['author']['date'],
-            'commit_message' => $commit['commit']['message'],
-            'commit_html_url' => $commit['html_url'],
-            'created_at' => new DateTimeImmutable('now', new DateTimeZone('UTC')),
-            'updated_at' => new DateTimeImmutable('now', new DateTimeZone('UTC')),
-        ];
     }
 }

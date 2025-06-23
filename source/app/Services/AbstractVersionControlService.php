@@ -11,7 +11,7 @@ abstract class AbstractVersionControlService implements VersionControlServiceInt
     /**
      * @throws VersionControlServiceException
      */
-    public function get(int $count = 100): array
+    public function get(int $count = 100): bool
     {
         return $this->getVersionControlService()
             ->get($count);

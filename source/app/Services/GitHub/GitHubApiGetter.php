@@ -3,7 +3,10 @@ namespace App\Services\GitHub;
 
 use App\Api\GitHub\GitHubApi;
 use App\Contracts\CommitGetInterface;
+use App\DataTransferObjects\CommitDTO;
 use App\Exceptions\VersionControlApiException;
+use DateTimeImmutable;
+use DateTimeZone;
 
 readonly class GitHubApiGetter implements CommitGetInterface
 {
@@ -16,25 +19,50 @@ readonly class GitHubApiGetter implements CommitGetInterface
     /**
      * @throws VersionControlApiException
      */
-    public function mostRecentCommits(int $count, int $pages, int $perPage): array
+    public function mostRecentCommits(int $pages, int $perPage, callable $processCommit): bool
     {
-        $commitHashes = [];
-
         for ($page = 1; $page <= $pages; $page++) {
 
+            $commitCount = 0;
             $commits = $this->api->mostRecentCommits($this->owner, $this->repo, $page, $perPage);
+
+            if (empty($commits)) {
+                break;
+            }
 
             foreach ($commits as $commit) {
                 if (isset($commit['sha'])) {
-                    $commitHashes[] = $commit;
+                    $commit = $this->format($commit);
+                    $processCommit($commit);
+                    $commitCount++;
                 }
             }
 
-            if (count($commitHashes) < $perPage) {
+            if ($commitCount < $perPage) {
                 break;
             }
         }
 
-        return $commitHashes;
+        return true;
+    }
+
+    private function format(array $commit): CommitDTO
+    {
+        $now = new DateTimeImmutable('now', new DateTimeZone('UTC'))->format('Y-m-d H:i:s');
+
+        return new CommitDTO(
+            provider: 'github',
+            owner: $this->owner,
+            repo: $this->repo,
+            hash: $commit['sha'],
+            author: $commit['commit']['author']['name'] ?? 'Unknown',
+            authorAvatarUrl: $commit['author']['avatar_url'] ?? '',
+            authorHtmlUrl: $commit['author']['html_url'] ?? '',
+            commitDate: new DateTimeImmutable($commit['commit']['author']['date'])->format('Y-m-d H:i:s'),
+            commitMessage: $commit['commit']['message'],
+            commitHtmlUrl: $commit['html_url'],
+            createdAt: $now,
+            updatedAt: $now,
+        );
     }
 }
