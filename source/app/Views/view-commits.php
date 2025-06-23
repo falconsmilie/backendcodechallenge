@@ -18,11 +18,11 @@ if (! count($commits)) {
 
     <div style="padding: 10px 10px 10px 10px">
         <?php if ($page > 1): ?>
-            <a href="?page=<?= $page - 1 ?>">← Previous</a>
+            <a href="?page=<?= $page - 1 ?>&results_per_page=<?= $resultsPerPage ?>">← Previous</a>
         <?php endif; ?>
 
         <?php if ($page < $totalPages): ?>
-            <a href="?page=<?= $page + 1 ?>" style="margin-left:10px;">Next →</a>
+            <a href="?page=<?= $page + 1 ?>&results_per_page=<?= $resultsPerPage ?>" style="margin-left:10px;">Next →</a>
         <?php endif; ?>
     </div>
 
@@ -88,11 +88,11 @@ if (! count($commits)) {
     ?>
     <div>
         <?php if ($page > 1): ?>
-            <a href="?page=<?= $page - 1 ?>">← Previous</a>
+            <a href="?page=<?= $page - 1 ?>&results_per_page=<?= $resultsPerPage ?>">← Previous</a>
         <?php endif; ?>
 
         <?php if ($page < $totalPages): ?>
-            <a href="?page=<?= $page + 1 ?>" style="margin-left:10px;">Next →</a>
+            <a href="?page=<?= $page + 1 ?>&results_per_page=<?= $resultsPerPage ?>" style="margin-left:10px;">Next →</a>
         <?php endif; ?>
     </div>
     <?php

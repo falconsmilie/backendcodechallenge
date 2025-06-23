@@ -38,12 +38,15 @@ http://localhost:8000/get/{provider}/{repo-owner}/{repo-name}
 - http://localhost:8000/get/github/nodejs/node
 - http://localhost:8000/get/github/Circunomics/hiring_backendcodechallenge
 
-| Parameter     | Required | Description                                                   |
-|---------------|:--------:|---------------------------------------------------------------|
-| `get`         |    ✓     | Route action keyword; must be `get`.                          |
-| `provider`    |    ✓     | Currently only `github` is supported.                         |
-| `repo-owner`  |    ✓     | Owner of the repository.                                      |
-| `repo-name`   |    ✓     | Name of the repository.                                       |
+| Route Parameters     |   Required   | Description                           |
+|----------------------|:------------:|---------------------------------------|
+| `get`                |      ✓       | Route action keyword; must be `get`.  |
+| `provider`           |      ✓       | Currently only `github` is supported. |
+| `repo-owner`         |      ✓       | Owner of the repository.              |
+| `repo-name`          |      ✓       | Name of the repository.               |
+| **Query Parameters** | **Required** | **Description**                       |
+| `page`               |      ✕       | Which page of the results             |
+| `results_per_page`   |      ✕       | How many results per page             |
 
 Invalid or misspelled repository names will return an appropriate exception message. Malformed routes (eg missing 
 parameters) redirect to the index route.
@@ -74,12 +77,14 @@ This format enables flexible querying:
 2. View all commits from a specific repository owner.
 3. View all GitHub commits stored in the database.
 
-| Parameter     | Required | Description                                                   |
-|---------------|:--------:|---------------------------------------------------------------|
-| `view`        |    ✓     | Route action keyword; must be `view`.                         |
-| `provider`    |    ✓     | Currently only `github` is supported.                         |
-| `repo-owner`  |    ✕     | Repository owner (optional).                                  |
-| `repo-name`   |    ✕     | Repository name (optional).                                   |
+| Parameter     | Required | Description                           |
+|---------------|:--------:|---------------------------------------|
+| `view`        |    ✓     | Route action keyword; must be `view`. |
+| `provider`    |    ✓     | Currently only `github` is supported. |
+| `repo-owner`  |    ✕     | Repository owner (optional).          |
+| `repo-name`   |    ✕     | Repository name (optional).           |
+| **Query Parameters** | **Required** | **Description**                       |
+| `commit_count`               |      ✕       | How many commits to get               |
 
 To understand the structure of the stored data, refer to the database schema:
 

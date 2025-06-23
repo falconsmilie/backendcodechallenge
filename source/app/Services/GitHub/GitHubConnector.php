@@ -56,7 +56,7 @@ class GitHubConnector implements VersionControlServiceInterface
 
         $totalPages = (int)ceil($totalCommits / $resultsPerPage);
 
-        return compact('commits', 'page', 'totalPages', 'totalCommits');
+        return compact('commits', 'page', 'resultsPerPage', 'totalPages', 'totalCommits');
     }
 
     private function formatCommit(array $commit): array
