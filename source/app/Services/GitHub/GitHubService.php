@@ -7,6 +7,8 @@ use App\Api\ProviderApiInterface;
 use App\Contracts\CommitSaveInterface;
 use App\Contracts\CommitViewInterface;
 use App\DataTransferObjects\CommitDTO;
+use App\DataTransferObjects\GetParamsDTO;
+use App\DataTransferObjects\PaginationDTO;
 use App\Exceptions\CommitApiException;
 use App\Exceptions\CommitRepositoryException;
 use App\Exceptions\CommitServiceException;
@@ -14,9 +16,9 @@ use App\Models\Commit;
 use App\Repositories\MySqlCommitRepository;
 use App\Services\AbstractCommitService;
 use App\Services\Commit\BufferedCommitSave;
-use DateMalformedStringException;
 use DateTimeImmutable;
 use DateTimeZone;
+use Exception;
 
 class GitHubService extends AbstractCommitService
 {
@@ -38,28 +40,25 @@ class GitHubService extends AbstractCommitService
         $this->commitViewer = $this->commitSaver;
     }
 
-    /**
-     * @throws CommitServiceException
-     */
-    public function getCommits(int $count = 100): bool
+    public function getCommits(GetParamsDTO $params): bool
     {
-        $perPage = min($count, config('app.github.requests.fetch_per_page_limit'));
-        $pages = (int)ceil($count / $perPage);
+        $perPage = min($params->commitCount, config('app.github.requests.fetch_per_page_limit'));
+        $pages = (int)ceil($params->commitCount / $perPage);
 
         $commitSaveHandler = new BufferedCommitSave($this->commitSaver, self::BATCH_INSERT_BUFFER_SIZE);
 
         return $this->mostRecentCommits($pages, $perPage, $commitSaveHandler);
     }
 
-    public function viewCommits(int $page = 1, int $resultsPerPage = 100): array
+    public function viewCommits(PaginationDTO $pagination): array
     {
         $error = null;
         $commits = [];
 
         try {
             $commits = $this->commitViewer->getByProviderGroupedByAuthor(
-                $page,
-                $resultsPerPage,
+                $pagination->page,
+                $pagination->resultsPerPage,
                 self::PROVIDER,
                 $this->owner,
                 $this->repo
@@ -70,14 +69,18 @@ class GitHubService extends AbstractCommitService
 
         $totalCommits = $this->commitViewer->countByProvider(self::PROVIDER, $this->owner, $this->repo);
 
-        $totalPages = (int)ceil($totalCommits / $resultsPerPage);
+        $totalPages = (int)ceil($totalCommits / $pagination->resultsPerPage);
 
-        return compact('commits', 'error', 'page', 'resultsPerPage', 'totalPages', 'totalCommits');
+        return [
+            'commits' => $commits,
+            'error' => $error,
+            'page' => $pagination->page,
+            'resultsPerPage' => $pagination->resultsPerPage,
+            'totalPages' => $totalPages,
+            'totalCommits' => $totalCommits,
+        ];
     }
 
-    /**
-     * @throws CommitServiceException
-     */
     private function mostRecentCommits(int $pages, int $perPage, callable $processCommit): bool
     {
         for ($page = 1; $page <= $pages; $page++) {
@@ -127,12 +130,12 @@ class GitHubService extends AbstractCommitService
 
             $commitDate = new DateTimeImmutable($rawCommit['commit']['author']['date'])
                 ->format('Y-m-d H:i:s');
-        } catch (DateMalformedStringException $e) {
+        } catch (Exception $e) {
             throw new CommitServiceException($e->getMessage(), $e->getCode(), $e);
         }
 
         return new CommitDTO(
-            provider: 'github',
+            provider: self::PROVIDER,
             owner: $this->owner,
             repo: $this->repo,
             hash: $rawCommit['sha'],

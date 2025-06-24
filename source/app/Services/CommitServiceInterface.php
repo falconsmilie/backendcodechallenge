@@ -2,9 +2,12 @@
 
 namespace App\Services;
 
+use App\DataTransferObjects\GetParamsDTO;
+use App\DataTransferObjects\PaginationDTO;
+
 interface CommitServiceInterface
 {
-    public function viewCommits(int $page = 1, int $resultsPerPage = 100): array;
+    public function viewCommits(PaginationDTO $pagination): array;
 
-    public function getCommits(int $count = 1000): bool;
+    public function getCommits(GetParamsDTO $params): bool;
 }

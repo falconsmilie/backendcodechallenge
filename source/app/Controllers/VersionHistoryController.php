@@ -1,13 +1,15 @@
 <?php
 namespace App\Controllers;
 
+use App\DataTransferObjects\GetParamsDTO;
+use App\DataTransferObjects\PaginationDTO;
 use App\Exceptions\CommitServiceException;
 use App\Services\CommitFactory;
-use Exception;
+use InvalidArgumentException;
 
 class VersionHistoryController
 {
-    private const int PAGE_LIMIT = 1;
+    private const int DEFAULT_PAGE = 1;
     private const int RESULTS_PER_PAGE = 100;
     private const int GET_COMMIT_COUNT = 1000;
 
@@ -24,24 +26,33 @@ class VersionHistoryController
     {
         // imagine we do some validation here wth these query params ...
         $page = isset($_GET['page'])
-            ? max(self::PAGE_LIMIT, (int)$_GET['page'])
-            : self::PAGE_LIMIT;
+            ? max(self::DEFAULT_PAGE, (int)$_GET['page'])
+            : self::DEFAULT_PAGE;
 
         $resultsPerPage = isset($_GET['results_per_page'])
             ? min(self::RESULTS_PER_PAGE, (int)$_GET['results_per_page'])
             : self::RESULTS_PER_PAGE;
+
+        $pagination = new PaginationDTO($page, $resultsPerPage);
 
         try {
             view(
                 'view-commits',
                 new CommitFactory($this->provider, $this->owner, $this->repo)
                     ->make()
-                    ->viewCommits($page, $resultsPerPage)
+                    ->viewCommits($pagination)
             );
-        } catch (CommitServiceException $e) {
+        } catch (CommitServiceException | InvalidArgumentException $e) {
             view(
                 'view-commits',
-                ['error' => $e->getMessage(), 'commits' => [], 'page', 'resultsPerPage', 'totalPages', 'totalCommits']
+                [
+                    'error' => $e->getMessage(),
+                    'commits' => [],
+                    'page' => $page,
+                    'resultsPerPage' => $resultsPerPage,
+                    'totalPages' => 0,
+                    'totalCommits' => 0
+                ]
             );
         }
     }
@@ -53,10 +64,12 @@ class VersionHistoryController
             ? min(self::GET_COMMIT_COUNT, (int)$_GET['commit_count'])
             : self::GET_COMMIT_COUNT;
 
+        $getParams = new GetParamsDTO($count);
+
         try {
             new CommitFactory($this->provider, $this->owner, $this->repo)
                 ->make()
-                ->getCommits($count);
+                ->getCommits($getParams);
         } catch (CommitServiceException $e) {
             // TODO: create an acceptable user error message, instead of exposing our internals
             view('fetch-commits', ['message' => $e->getMessage()]);

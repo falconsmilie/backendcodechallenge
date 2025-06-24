@@ -22,7 +22,7 @@ readonly class MySqlCommitRepository implements CommitSaveInterface, CommitViewI
         try {
             $this->commit->newQuery()->upsert($commits, ['hash']);
         } catch (Exception $e) {
-            throw new CommitRepositoryException($e->getMessage());
+            throw new CommitRepositoryException($e->getMessage(), $e->getCode(), $e);
         }
     }
 
@@ -30,14 +30,14 @@ readonly class MySqlCommitRepository implements CommitSaveInterface, CommitViewI
      * @throws CommitRepositoryException
      */
     public function getByProviderGroupedByAuthor(
-        int $offset,
+        int $page,
         int $limit,
         string $provider,
         ?string $owner = null,
         ?string $repo = null,
     ): array {
 
-        if ($offset < 1 || $limit < 1) {
+        if ($page < 1 || $limit < 1) {
             throw new CommitRepositoryException('Offset and limit must be greater than 0.');
         }
 
@@ -46,7 +46,7 @@ readonly class MySqlCommitRepository implements CommitSaveInterface, CommitViewI
         $this->applyOwnerRepoFilters($query, $owner, $repo);
 
         return $query->orderBy('commit_date', 'desc')
-            ->skip(($offset - 1) * $limit)
+            ->skip(($page - 1) * $limit)
             ->take($limit)
             ->get()
             ->groupBy('author')
@@ -64,11 +64,11 @@ readonly class MySqlCommitRepository implements CommitSaveInterface, CommitViewI
 
     private function applyOwnerRepoFilters(Builder $query, ?string $owner, ?string $repo): void
     {
-        if ($owner) {
+        if ($owner !== null && $owner !== '') {
             $query->where('owner', $owner);
         }
 
-        if ($repo) {
+        if ($repo !== null && $repo !== '') {
             $query->where('repo', $repo);
         }
     }
