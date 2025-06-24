@@ -4,13 +4,13 @@ namespace Tests\Integration\Repositories;
 
 use App\Exceptions\CommitRepositoryException;
 use App\Models\Commit;
-use App\Repositories\MySqlCommitRepository;
+use App\Repositories\CommitRepository;
 use Carbon\Carbon;
 use Tests\TestCase;
 
 class MySqlCommitRepositoryTest extends TestCase
 {
-    private MySqlCommitRepository $repository;
+    private CommitRepository $repository;
     private Commit $commit;
 
     protected function setUp(): void
@@ -20,7 +20,7 @@ class MySqlCommitRepositoryTest extends TestCase
         $now = Carbon::now();
 
         $this->commit = new Commit();
-        $this->repository = new MySqlCommitRepository($this->commit);
+        $this->repository = new CommitRepository($this->commit);
 
         $this->commit->newQuery()->create([
             'provider' => 'github',
