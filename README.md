@@ -77,14 +77,14 @@ This format enables flexible querying:
 2. View all commits from a specific repository owner.
 3. View all GitHub commits stored in the database.
 
-| Parameter     | Required | Description                           |
-|---------------|:--------:|---------------------------------------|
-| `view`        |    ✓     | Route action keyword; must be `view`. |
-| `provider`    |    ✓     | Currently only `github` is supported. |
-| `repo-owner`  |    ✕     | Repository owner (optional).          |
-| `repo-name`   |    ✕     | Repository name (optional).           |
+| Route Parameters     | Required | Description                           |
+|----------------------|:--------:|---------------------------------------|
+| `view`               |    ✓     | Route action keyword; must be `view`. |
+| `provider`           |    ✓     | Currently only `github` is supported. |
+| `repo-owner`         |    ✕     | Repository owner (optional).          |
+| `repo-name`          |    ✕     | Repository name (optional).           |
 | **Query Parameters** | **Required** | **Description**                       |
-| `commit_count`               |      ✕       | How many commits to get               |
+| `commit_count`       |      ✕       | How many commits to get               |
 
 To understand the structure of the stored data, refer to the database schema:
 

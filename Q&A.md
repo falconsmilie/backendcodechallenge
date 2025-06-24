@@ -1,28 +1,17 @@
 # Implementation and Conceptual Questions
-
-- [How were you debugging this mini-project?](#how-were-you-debugging-this-mini-project)
-- [Please give a detailed answer on your approach to test this project](#please-give-a-detailed-answer-on-your-approach-to-test-this-project)
-- [Imagine this mini-project needs microservices with one single database](#imagine-this-mini-project-needs-microservices-with-one-single-database)
-    * [Suggested Microservices](#microservices)
-    * [Database Design](#database)
-    * [Communication Between Services](#communication-between-services)
-    * [Deployment Layout](#deployment-layout)
-    * [Considerations](#considerations)
-- [How would your solution differ if you had to call another external API to store and receive the commits](#how-would-your-solution-differ-if-you-had-to-call-another-external-api-to-store-and-receive-the-commits)
-    * [What Would Change](#what-would-change)
-        + [1. Refactor `saveMany()`](#1-refactor-savemany)
-        + [2. Refactor `getByProviderGroupedByAuthor()` and `countByProvider()`](#2-refactor-getbyprovidergroupedbyauthor-and-countbyprovider)
-        + [3. Leave the Controller and Service Layer Alone](#3-leave-the-controller-and-service-layer-alone)
-    * [Other Potential Improvements](#other-potential-improvements)
-
-## How were you debugging this mini-project?
-For the most part i was using `var_dump`. The unit tests were also handy because most of them were written early. In a 
-dedicated working environment I would also use PhpStorm IDE with XDebug.
-
-## Please give a detailed answer on your approach to test this project
-Due to time constraints, I focused exclusively on Unit tests. Given the application’s reliance on external APIs and database 
-interactions, isolating these dependencies was important. I considered using Mockery but opted to stay within PHPUnit’s 
-mocking.
+- [Implementation and Conceptual Questions](#implementation-and-conceptual-questions)
+    * [Imagine this mini-project needs microservices with one single database](#imagine-this-mini-project-needs-microservices-with-one-single-database)
+        + [Considerations](#considerations)
+        + [Microservices](#microservices)
+        + [Database](#database)
+        + [Communication Between Services](#communication-between-services)
+        + [Deployment Layout](#deployment-layout)
+    * [How would your solution differ if you had to call another external API to store and receive the commits?](#how-would-your-solution-differ-if-you-had-to-call-another-external-api-to-store-and-receive-the-commits)
+        + [Assumptions](#assumptions)
+        + [`ExternalApiCommitRepository`](#externalapicommitrepository)
+        + [How to Use It](#how-to-use-it)
+        + [Benefits](#benefits)
+        + [Other Potential Improvements](#other-potential-improvements)
 
 ## Imagine this mini-project needs microservices with one single database
 
@@ -108,85 +97,155 @@ One **PostgreSQL** or **MySQL** instance with at least the following tables:
 ---
 
 ## How would your solution differ if you had to call another external API to store and receive the commits?
-We may need to update the [GitHubApi](source/app/Api/GitHub/GitHubApi.php) depending on *where* the external API is. 
-In any case though, we could adapt the existing [GitHubApiGetter](source/app/Services/GitHub/GitHubApiGetter.php) 
-(or create a new class) to implement `CommitViewInterface` and `CommitSaveInterface`. Then, migrate and refactor the 
-methods from `MySqlCommitRepository` to the `GitHubApiGetter` to make HTTP requests (from the API), instead of 
-accessing the database.
+
+### Assumptions
+
+* There's an **external HTTP API** we call to store and retrieve commits.
+* The external API accepts JSON arrays of commits (similar to `CommitDTO::toArray()`).
+* The external API has endpoints like:
+    * `POST /commits` to save many commits
+    * `GET /commits` with query parameters (`provider`, `owner`, `repo`, `offset`, `limit`)
+* It returns JSON, ideally grouped or paginated.
 
 ---
 
-### What Would Change
-
-#### 1. Refactor `saveMany()`
-
-Replace:
+### ExternalApiCommitRepository
 
 ```php
-public function saveMany(array $commits): void
+<?php
+
+namespace App\Repositories;
+
+use App\Contracts\CommitSaveInterface;
+use App\Contracts\CommitViewInterface;
+use App\DataTransferObjects\CommitDTO;
+use App\Exceptions\CommitRepositoryException;
+use GuzzleHttp\Client;
+use GuzzleHttp\Exception\GuzzleException;
+
+readonly class ExternalApiCommitRepository implements CommitSaveInterface, CommitViewInterface
 {
-    collect($commits)
-        ->chunk(500)
-        ->each(fn($chunk) => Commit::insertOrIgnore($chunk->toArray()));
+    public function __construct(private Client $client)
+    {
+    }
+
+    /**
+     * @param CommitDTO[] $commits
+     * @throws CommitRepositoryException
+     */
+    public function saveMany(array $commits): void
+    {
+        $payload = array_map(fn(CommitDTO $dto) => $dto->toArray(), $commits);
+
+        try {
+            $response = $this->client->post('/commits', [
+                'json' => ['commits' => $payload],
+            ]);
+        } catch (GuzzleException $e) {
+            throw new CommitRepositoryException('Failed to save commits to external API: ' . $e->getMessage());
+        }
+
+        if ($response->getStatusCode() !== 200) {
+            throw new CommitRepositoryException("External API returned status {$response->getStatusCode()}");
+        }
+    }
+
+    /**
+     * @throws CommitRepositoryException
+     */
+    public function getByProviderGroupedByAuthor(
+        int $offset,
+        int $limit,
+        string $provider,
+        ?string $owner = null,
+        ?string $repo = null
+    ): array {
+        try {
+            $response = $this->client->get('/commits', [
+                'query' => array_filter([
+                    'provider' => $provider,
+                    'owner' => $owner,
+                    'repo' => $repo,
+                    'offset' => ($offset - 1) * $limit,
+                    'limit' => $limit,
+                ]),
+            ]);
+        } catch (GuzzleException $e) {
+            throw new CommitRepositoryException('Failed to fetch commits from external API: ' . $e->getMessage());
+        }
+
+        if ($response->getStatusCode() !== 200) {
+            throw new CommitRepositoryException("External API returned status {$response->getStatusCode()}");
+        }
+
+        $data = json_decode($response->getBody()->getContents(), true);
+
+        if (!is_array($data)) {
+            throw new CommitRepositoryException('Invalid response format from external API.');
+        }
+
+        return collect($data)->groupBy('author')->toArray();
+    }
+
+    public function countByProvider(string $provider, ?string $owner = null, ?string $repo = null): int
+    {
+        try {
+            $response = $this->client->get('/commits/count', [
+                'query' => array_filter([
+                    'provider' => $provider,
+                    'owner' => $owner,
+                    'repo' => $repo,
+                ]),
+            ]);
+        } catch (GuzzleException $e) {
+            throw new CommitRepositoryException('Failed to count commits via external API: ' . $e->getMessage());
+        }
+
+        $data = json_decode($response->getBody()->getContents(), true);
+
+        return (int) ($data['count'] ?? 0);
+    }
 }
 ```
-
-With something like:
-
-```php
-public function saveMany(array $commits): void
-{
-    $response = $this->gitHubApi->post($commits);
-
-    return formatForConsumer($response);
-}
-```
-
-We’re now pushing commits **via HTTP** instead of writing them to a database.
 
 ---
 
-#### 2. Refactor `getByProviderGroupedByAuthor()` and `countByProvider()`
+### How to Use It
 
-These are currently querying the local database:
+In `GitHubService`, we can inject this instead of `MySqlCommitRepository`:
 
 ```php
-public function getByProviderGroupedByAuthor(int $page, int $resultsPerPage): array
-{
-    return Commit::where(...)->get()->groupBy('author');
-}
-
-public function countByProvider(): int
-{
-    return Commit::count();
-}
+$client = new Client(['base_uri' => 'https://external-commit-api.com']);
+$repo = new ExternalApiCommitRepository($client);
 ```
 
-We now make external API GET requests for both methods. For example:
+Or build a `CommitRepositoryFactory`:
 
 ```php
-public function getByProviderGroupedByAuthor(int $page, int $resultsPerPage): array
+class CommitRepositoryFactory
 {
-    $response = $this->gitHubApi->get($this->owner, $this->repo, $page, $resultsPerPage);
-
-    return formatForConsumer($response);
+    public static function make(string $type): CommitSaveInterface & CommitViewInterface
+    {
+        return match ($type) {
+            'db' => new MySqlCommitRepository(new Commit()),
+            'external' => new ExternalApiCommitRepository(new Client([
+                'base_uri' => 'https://external-commit-api.com',
+                'headers' => ['Authorization' => 'Bearer ' . config('app.api_token')],
+            ])),
+            default => throw new \InvalidArgumentException("Unknown repo type: $type"),
+        };
+    }
 }
 ```
 
 ---
 
-#### 3. Leave the Controller and Service Layer Alone
+### Benefits
 
-The `VersionHistoryController` and `VersionControlFactory` don’t need to change at all.
-
-```php
-new VersionControlFactory($this->provider, $this->owner, $this->repo)
-    ->make()
-    ->get();
-```
-
-Because the **Repositories are encapsulated**, and there is a well-defined **separation of concerns**, we’re simply 
-swapping database logic for HTTP logic.
+* Zero changes to service classes.
+* Clean separation of concerns.
+* Easy to test and mock with fake HTTP responses.
+* Swappable implementations via factory or container binding.
 
 ---
 
