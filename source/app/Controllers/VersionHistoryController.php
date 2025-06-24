@@ -54,7 +54,7 @@ class VersionHistoryController
                 ->make()
                 ->getCommits($count);
 
-        } catch (CommitServiceException | Exception $e) {
+        } catch (CommitServiceException $e) {
             // TODO: create an acceptable user error message, instead of exposing our internals
             view('fetch-commits', ['message' => $e->getMessage()]);
 

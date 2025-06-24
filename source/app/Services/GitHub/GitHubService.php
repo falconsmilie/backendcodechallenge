@@ -3,6 +3,9 @@
 namespace App\Services\GitHub;
 
 use App\Api\GitHub\GitHubApi;
+use App\Api\ProviderApiInterface;
+use App\Contracts\CommitSaveInterface;
+use App\Contracts\CommitViewInterface;
 use App\DataTransferObjects\CommitDTO;
 use App\Exceptions\CommitApiException;
 use App\Exceptions\CommitRepositoryException;
@@ -19,17 +22,16 @@ class GitHubService extends AbstractCommitService
 {
     private const string PROVIDER = 'github';
     private const int BATCH_INSERT_BUFFER_SIZE = 100;
-    private const int API_RETRIES = 3;
 
-    private GitHubApi $commitGetter;
-    private MySqlCommitRepository $commitSaver;
-    private MySqlCommitRepository $commitViewer;
+    private ProviderApiInterface $commitGetter;
+    private CommitSaveInterface $commitSaver;
+    private CommitViewInterface $commitViewer;
 
     public function __construct(
         protected string $owner,
         protected string $repo,
-        ?GitHubApi $api = null,
-        ?MySqlCommitRepository $commitRepository = null
+        ?ProviderApiInterface $api = null,
+        ?CommitSaveInterface $commitRepository = null
     ) {
         $this->commitGetter = $api ?? new GitHubApi;
         $this->commitSaver = $commitRepository ?? new MySqlCommitRepository(new Commit);
@@ -44,12 +46,9 @@ class GitHubService extends AbstractCommitService
         $perPage = min($count, config('app.github.requests.fetch_per_page_limit'));
         $pages = (int)ceil($count / $perPage);
 
-        $commitSaver = new BufferedCommitSave(
-            $this->commitSaver,
-            self::BATCH_INSERT_BUFFER_SIZE
-        );
+        $commitSaveHandler = new BufferedCommitSave($this->commitSaver, self::BATCH_INSERT_BUFFER_SIZE);
 
-        return $this->mostRecentCommits($pages, $perPage, $commitSaver);
+        return $this->mostRecentCommits($pages, $perPage, $commitSaveHandler);
     }
 
     /**
@@ -79,17 +78,19 @@ class GitHubService extends AbstractCommitService
     {
         for ($page = 1; $page <= $pages; $page++) {
 
-            $retries = 0;
             $commitCount = 0;
 
             try {
                 $commits = $this->commitGetter->mostRecentCommits($this->owner, $this->repo, $page, $perPage);
             } catch (CommitApiException $e) {
-                $retries++;
-
-                if ($retries >= self::API_RETRIES) {
-                    throw new CommitServiceException($e->getMessage(), $e->getCode(), $e);
-                }
+//                $retries++;
+//                $page--;
+//
+//                if ($retries >= self::API_RETRIES) {
+//                    throw new CommitServiceException($e->getMessage(), $e->getCode(), $e);
+//                }
+                // TODO: let's just go to the next page for now ...
+                continue;
             }
 
             if (empty($commits)) {
@@ -137,8 +138,8 @@ class GitHubService extends AbstractCommitService
             authorAvatarUrl: $rawCommit['author']['avatar_url'] ?? null,
             authorHtmlUrl: $rawCommit['author']['html_url'] ?? null,
             commitDate: $commitDate,
-            commitMessage: $rawCommit['commit']['message'],
-            commitHtmlUrl: $rawCommit['html_url'],
+            commitMessage: $rawCommit['commit']['message'] ?? null,
+            commitHtmlUrl: $rawCommit['html_url'] ?? null,
             createdAt: $now,
             updatedAt: $now,
         );

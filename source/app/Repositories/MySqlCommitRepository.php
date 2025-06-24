@@ -39,8 +39,7 @@ readonly class MySqlCommitRepository implements CommitSaveInterface, CommitViewI
             throw new CommitRepositoryException('Offset and limit must be greater than 0.');
         }
 
-        $query = $this->commit->newQuery()
-            ->where('provider', $provider);
+        $query = $this->commit->newQuery()->where('provider', $provider);
 
         $this->applyOwnerRepoFilters($query, $owner, $repo);
 
@@ -54,8 +53,7 @@ readonly class MySqlCommitRepository implements CommitSaveInterface, CommitViewI
 
     public function countByProvider(string $provider, ?string $owner = null, ?string $repo = null): int
     {
-        $query = $this->commit->newQuery()
-            ->where('provider', $provider);
+        $query = $this->commit->newQuery()->where('provider', $provider);
 
         $this->applyOwnerRepoFilters($query, $owner, $repo);
 
