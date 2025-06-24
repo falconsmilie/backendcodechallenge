@@ -36,9 +36,7 @@ class VersionHistoryController
         $pagination = new PaginationDTO($page, $resultsPerPage);
 
         try {
-            $service = $this->commitFactory->make();
-
-            $data = $service->viewCommits($pagination);
+            $data = $this->commitFactory->make()->viewCommits($pagination);
 
             view('view-commits', [
                 'error' => null,
@@ -72,9 +70,7 @@ class VersionHistoryController
         $getParams = new GetParamsDTO($count);
 
         try {
-            $service = $this->commitFactory->make();
-
-            $service->getCommits($getParams);
+            $this->commitFactory->make()->getCommits($getParams);
         } catch (CommitServiceException $e) {
             view('get-commits', ['message' => $e->getMessage()]);
 

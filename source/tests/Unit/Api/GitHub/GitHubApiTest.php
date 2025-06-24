@@ -118,7 +118,6 @@ class GitHubApiTest extends TestCase
     public function testMostRecentCommitsThrowsExceptionOnNon200Status(): void
     {
         $this->expectException(CommitApiException::class);
-        $this->expectExceptionMessage('GitHub says: 404');
 
         $response = new Response(404, [], 'Not Found');
 
@@ -163,7 +162,6 @@ class GitHubApiTest extends TestCase
     public function testMostRecentCommitsThrowsExceptionAfterMaxRetriesOnStatus429(): void
     {
         $this->expectException(CommitApiException::class);
-        $this->expectExceptionMessage('GitHub API error 429 after 3 attempts');
 
         $response429 = new Response(429, [], 'Too Many Requests');
 

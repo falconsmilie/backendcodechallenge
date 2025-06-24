@@ -7,6 +7,7 @@ use App\Exceptions\CommitApiException;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
 use JsonException;
+use Psr\Http\Message\ResponseInterface;
 
 class GitHubApi implements ProviderApiInterface
 {
@@ -43,13 +44,7 @@ class GitHubApi implements ProviderApiInterface
 
         for ($attempt = 1; $attempt <= $maxRetries; $attempt++) {
             try {
-                $response = $this->client->get('repos/'.$owner.'/'.$repo.'/commits', [
-                    'query' => [
-                        'per_page' => $perPage,
-                        'page' => $page,
-                    ],
-                    'timeout' => 10,
-                ]);
+                $response = $this->response($owner, $repo, $perPage, $page);
             } catch (GuzzleException $e) {
                 if ($attempt === $maxRetries) {
                     throw new CommitApiException($e->getMessage(), $e->getCode(), $e);
@@ -58,18 +53,15 @@ class GitHubApi implements ProviderApiInterface
                 continue;
             }
 
-            $status = $response->getStatusCode();
+            $statusCode = $response->getStatusCode();
+            $reason = $response->getReasonPhrase();
 
-            if ($status === 429 || ($status >= 500 && $status < 600)) {
-                if ($attempt === $maxRetries) {
-                    throw new CommitApiException("GitHub API error {$status} after {$maxRetries} attempts");
+            try {
+                $this->responseStatus($statusCode, $attempt, $maxRetries, $reason);
+            } catch (CommitApiException $e) {
+                if ($statusCode === 429 || ($statusCode >= 500 && $statusCode < 600)) {
+                    continue;
                 }
-
-                continue;
-            }
-
-            if ($status !== 200) {
-                throw new CommitApiException("GitHub says: {$status}");
             }
 
             $body = $response->getBody()->getContents();
@@ -81,27 +73,66 @@ class GitHubApi implements ProviderApiInterface
             }
 
             if (!is_array($commits)) {
-                throw new CommitApiException('GitHub API response malformed: expected array');
-            }
-
-            $hasNextPage = false;
-            $linkHeader = $response->getHeaderLine('Link');
-            if ($linkHeader) {
-                $links = explode(',', $linkHeader);
-                foreach ($links as $link) {
-                    if (preg_match('/<([^>]+)>;\s*rel="next"/', trim($link))) {
-                        $hasNextPage = true;
-                        break;
-                    }
-                }
+                throw new CommitApiException('GitHub response could not be decoded into an array');
             }
 
             return [
                 'commits' => $commits,
-                'hasNextPage' => $hasNextPage,
+                'hasNextPage' => $this->hasNextPage($response),
             ];
         }
 
         throw new CommitApiException('Unexpected error fetching commits');
+    }
+
+    /**
+     * @throws GuzzleException
+     */
+    private function response(string $owner, string $repo, int $perPage, int $page): ResponseInterface
+    {
+        return $this->client->get('repos/' . $owner . '/' . $repo . '/commits', [
+            'query' => [
+                'per_page' => $perPage,
+                'page' => $page,
+            ],
+            'timeout' => 10,
+        ]);
+    }
+
+    /**
+     * @throws CommitApiException
+     */
+    private function responseStatus(int $statusCode, int $attempt, int $maxRetries, string $reason): void
+    {
+        if ($statusCode === 429 || ($statusCode >= 500 && $statusCode < 600)) {
+            if ($attempt === $maxRetries) {
+                throw new CommitApiException(
+                    'GitHub says' . $statusCode . ' ' . $reason . ' after ' . $maxRetries . 'attempts'
+                );
+            }
+        }
+
+        if ($statusCode !== 200) {
+            throw new CommitApiException('GitHub says: ' . $statusCode . '  ' . $reason);
+        }
+    }
+
+    private function hasNextPage(ResponseInterface $response): bool
+    {
+        $hasNextPage = false;
+
+        $linkHeader = $response->getHeaderLine('Link');
+
+        if ($linkHeader) {
+            $links = explode(',', $linkHeader);
+            foreach ($links as $link) {
+                if (preg_match('/<([^>]+)>;\s*rel="next"/', trim($link))) {
+                    $hasNextPage = true;
+                    break;
+                }
+            }
+        }
+
+        return $hasNextPage;
     }
 }

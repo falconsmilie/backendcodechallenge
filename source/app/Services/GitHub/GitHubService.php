@@ -4,6 +4,7 @@ namespace App\Services\GitHub;
 
 use App\Api\GitHub\GitHubApi;
 use App\Api\ProviderApiInterface;
+use App\Contracts\CommitGetInterface;
 use App\Contracts\CommitSaveInterface;
 use App\Contracts\CommitViewInterface;
 use App\DataTransferObjects\CommitDTO;
@@ -32,12 +33,13 @@ class GitHubService extends AbstractCommitService
     public function __construct(
         protected string $owner,
         protected string $repo,
-        ?ProviderApiInterface $api = null,
-        ?CommitSaveInterface $commitRepository = null
+        ?CommitGetInterface $commitGetter = null,
+        ?CommitSaveInterface $commitSaver = null,
+        ?CommitViewInterface $commitViewer = null
     ) {
-        $this->commitGetter = $api ?? new GitHubApi;
-        $this->commitSaver = $commitRepository ?? new MySqlCommitRepository(new Commit);
-        $this->commitViewer = $this->commitSaver;
+        $this->commitGetter = $commitGetter ?? new GitHubApi;
+        $this->commitSaver = $commitSaver ?? new MySqlCommitRepository(new Commit);
+        $this->commitViewer = $commitViewer ?? $this->commitSaver;
     }
 
     public function getCommits(GetParamsDTO $params): bool
