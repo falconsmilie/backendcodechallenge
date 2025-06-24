@@ -81,20 +81,19 @@ class GitHubService extends AbstractCommitService
         ];
     }
 
+    /**
+     * @throws CommitServiceException
+     */
     private function mostRecentCommits(int $pages, int $perPage, callable $processCommit): bool
     {
         for ($page = 1; $page <= $pages; $page++) {
             $commitCount = 0;
 
             try {
-                $commits = $this->commitGetter->mostRecentCommits($this->owner, $this->repo, $page, $perPage);
+                $result = $this->commitGetter->mostRecentCommits($this->owner, $this->repo, $page, $perPage);
+                $commits = $result['commits'];
+                $hasNextPage = $result['hasNextPage'];
             } catch (CommitApiException $e) {
-//                $retries++;
-//                $page--;
-//
-//                if ($retries >= self::API_RETRIES) {
-//                    throw new CommitServiceException($e->getMessage(), $e->getCode(), $e);
-//                }
                 // TODO: let's just go to the next page for now ...
                 continue;
             }
@@ -111,7 +110,7 @@ class GitHubService extends AbstractCommitService
                 }
             }
 
-            if ($commitCount < $perPage) {
+            if ($commitCount < $perPage || !$hasNextPage) {
                 break;
             }
         }
@@ -125,11 +124,9 @@ class GitHubService extends AbstractCommitService
     private function format(array $rawCommit): CommitDTO
     {
         try {
-            $now = new DateTimeImmutable('now', new DateTimeZone('UTC'))
-                ->format('Y-m-d H:i:s');
+            $now = new DateTimeImmutable('now', new DateTimeZone('UTC'));
 
-            $commitDate = new DateTimeImmutable($rawCommit['commit']['author']['date'])
-                ->format('Y-m-d H:i:s');
+            $commitDate = new DateTimeImmutable($rawCommit['commit']['author']['date']);
         } catch (Exception $e) {
             throw new CommitServiceException($e->getMessage(), $e->getCode(), $e);
         }

@@ -7,7 +7,7 @@ use App\Services\GitHub\GitHubService;
 
 class CommitFactory
 {
-    protected array $providers = [
+    private const array PROVIDERS = [
         'github' => GitHubService::class,
         // 'gitlab' => GitLabService::class,
         // 'bitbucket' => BitbucketService::class,
@@ -23,11 +23,11 @@ class CommitFactory
      */
     public function make(): AbstractCommitService
     {
-        if (! isset($this->providers[$this->provider])) {
+        if (! isset(self::PROVIDERS[$this->provider])) {
             throw new CommitServiceException($this->provider . ' is not currently supported.');
         }
 
-        $class = $this->providers[$this->provider];
+        $class = self::PROVIDERS[$this->provider];
 
         return new $class($this->owner, $this->repo);
     }
