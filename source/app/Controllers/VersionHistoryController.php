@@ -20,9 +20,6 @@ class VersionHistoryController
         view('index');
     }
 
-    /**
-     * @throws Exception
-     */
     public function view(): void
     {
         // imagine we do some validation here wth these query params ...
@@ -46,14 +43,13 @@ class VersionHistoryController
     {
         // imagine we do some validation here wth these query params ...
         $count = isset($_GET['commit_count'])
-            ? max( self::GET_COMMIT_COUNT, (int)$_GET['commit_count'])
+            ? max(self::GET_COMMIT_COUNT, (int)$_GET['commit_count'])
             : self::GET_COMMIT_COUNT;
 
         try {
             new CommitFactory($this->provider, $this->owner, $this->repo)
                 ->make()
                 ->getCommits($count);
-
         } catch (CommitServiceException $e) {
             // TODO: create an acceptable user error message, instead of exposing our internals
             view('fetch-commits', ['message' => $e->getMessage()]);

@@ -77,7 +77,6 @@ class GitHubService extends AbstractCommitService
     private function mostRecentCommits(int $pages, int $perPage, callable $processCommit): bool
     {
         for ($page = 1; $page <= $pages; $page++) {
-
             $commitCount = 0;
 
             try {
@@ -124,7 +123,6 @@ class GitHubService extends AbstractCommitService
 
             $commitDate = new DateTimeImmutable($rawCommit['commit']['author']['date'])
                 ->format('Y-m-d H:i:s');
-
         } catch (DateMalformedStringException $e) {
             throw new CommitServiceException($e->getMessage(), $e->getCode(), $e);
         }

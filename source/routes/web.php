@@ -20,13 +20,10 @@ $repo = '';
 
 if (count($segments) === 4) {
     [$provider, $owner, $repo] = array_slice($segments, 1, 3);
-
 } elseif (count($segments) === 3) {
     [$provider, $owner] = array_slice($segments, 1, 2);
-
 } elseif (count($segments) === 2) {
     $provider = $segments[1];
-
 } else {
     $action = 'index';
 }

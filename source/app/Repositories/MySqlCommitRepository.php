@@ -10,7 +10,9 @@ use Illuminate\Database\Eloquent\Builder;
 
 readonly class MySqlCommitRepository implements CommitSaveInterface, CommitViewInterface
 {
-    public function __construct(private Commit $commit) {}
+    public function __construct(private Commit $commit)
+    {
+    }
 
     /**
      * @throws CommitRepositoryException

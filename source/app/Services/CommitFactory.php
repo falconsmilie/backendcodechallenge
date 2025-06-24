@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Exceptions\CommitServiceException;
 use App\Services\GitHub\GitHubService;
-use Exception;
 
 class CommitFactory
 {
@@ -13,7 +12,7 @@ class CommitFactory
     }
 
     /**
-     * @throws Exception
+     * @throws CommitServiceException
      */
     public function make(): AbstractCommitService
     {

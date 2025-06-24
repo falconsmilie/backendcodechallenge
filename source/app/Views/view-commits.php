@@ -1,7 +1,7 @@
 <h1>
     Commits by Author
     <?php
-    if (count($commits)):
+    if (count($commits)) :
         ?>
         (Page <?= htmlspecialchars($page) ?> of <?= htmlspecialchars($totalPages) ?>)
         <?php
@@ -17,22 +17,22 @@ if (! count($commits)) {
     ?>
 
     <div style="padding: 10px 10px 10px 10px">
-        <?php if ($page > 1): ?>
+        <?php if ($page > 1) : ?>
             <a href="?page=<?= $page - 1 ?>&results_per_page=<?= $resultsPerPage ?>">← Previous</a>
         <?php endif; ?>
 
-        <?php if ($page < $totalPages): ?>
+        <?php if ($page < $totalPages) : ?>
             <a href="?page=<?= $page + 1 ?>&results_per_page=<?= $resultsPerPage ?>" style="margin-left:10px;">Next →</a>
         <?php endif; ?>
     </div>
 
     <?php
-    foreach ($commits as $author => $group):
+    foreach ($commits as $author => $group) :
         ?>
         <section>
             <?php
-            if ($group[0]['author_avatar_url'] !== ''):
-            ?>
+            if ($group[0]['author_avatar_url'] !== '') :
+                ?>
             <div style="height: 96px">
                 <img src="<?= $group[0]['author_avatar_url'] ?>"
                      alt="<?= $author ?>"
@@ -42,20 +42,20 @@ if (! count($commits)) {
             ?>
                 <h2 style="position: relative; padding-top: 12px">
                     <?php
-                    if ($group[0]['author_html_url'] !== ''):
-                    ?>
+                    if ($group[0]['author_html_url'] !== '') :
+                        ?>
                     <a href="<?= $group[0]['author_html_url']; ?>" target="_blank">
-                    <?php
+                        <?php
                     endif;
                     ?>
                         <?= htmlspecialchars($author) ?>
-                    <?php if($group[0]['author_html_url'] !== ''): ?>
+                    <?php if ($group[0]['author_html_url'] !== '') : ?>
                     </a>
                     <?php endif; ?>
                 </h2>
             </div>
             <div style="display: grid; grid-template-columns: 50% 50%; gap: 0.5rem; padding:0; margin:0">
-                <?php foreach ($group as $commit): ?>
+                <?php foreach ($group as $commit) : ?>
                     <article style="margin:0;">
                         <div>
                             <div>
@@ -83,15 +83,15 @@ if (! count($commits)) {
                 <?php endforeach; ?>
             </div>
         </section>
-    <?php
+        <?php
     endforeach;
     ?>
     <div>
-        <?php if ($page > 1): ?>
+        <?php if ($page > 1) : ?>
             <a href="?page=<?= $page - 1 ?>&results_per_page=<?= $resultsPerPage ?>">← Previous</a>
         <?php endif; ?>
 
-        <?php if ($page < $totalPages): ?>
+        <?php if ($page < $totalPages) : ?>
             <a href="?page=<?= $page + 1 ?>&results_per_page=<?= $resultsPerPage ?>" style="margin-left:10px;">Next →</a>
         <?php endif; ?>
     </div>
