@@ -6,6 +6,7 @@ use App\DataTransferObjects\PaginationDTO;
 use App\Exceptions\CommitServiceException;
 use App\Services\CommitFactory;
 use InvalidArgumentException;
+use function view;
 
 class VersionHistoryController
 {
@@ -13,7 +14,7 @@ class VersionHistoryController
     private const int RESULTS_PER_PAGE = 100;
     private const int GET_COMMIT_COUNT = 1000;
 
-    public function __construct(protected string $provider, protected string $owner, protected string $repo)
+    public function __construct(protected CommitFactory $commitFactory)
     {
     }
 
@@ -24,7 +25,6 @@ class VersionHistoryController
 
     public function view(): void
     {
-        // imagine we do some validation here wth these query params ...
         $page = isset($_GET['page'])
             ? max(self::DEFAULT_PAGE, (int)$_GET['page'])
             : self::DEFAULT_PAGE;
@@ -36,12 +36,18 @@ class VersionHistoryController
         $pagination = new PaginationDTO($page, $resultsPerPage);
 
         try {
-            view(
-                'view-commits',
-                new CommitFactory($this->provider, $this->owner, $this->repo)
-                    ->make()
-                    ->viewCommits($pagination)
-            );
+            $service = $this->commitFactory->make();
+
+            $data = $service->viewCommits($pagination);
+
+            view('view-commits', [
+                'error' => null,
+                'commits' => $data['commits'],
+                'page' => $data['page'],
+                'resultsPerPage' => $data['resultsPerPage'],
+                'totalPages' => $data['totalPages'],
+                'totalCommits' => $data['totalCommits'],
+            ]);
         } catch (CommitServiceException | InvalidArgumentException $e) {
             view(
                 'view-commits',
@@ -59,7 +65,6 @@ class VersionHistoryController
 
     public function get(): void
     {
-        // imagine we do some validation here wth these query params ...
         $count = isset($_GET['commit_count'])
             ? min(self::GET_COMMIT_COUNT, (int)$_GET['commit_count'])
             : self::GET_COMMIT_COUNT;
@@ -67,12 +72,11 @@ class VersionHistoryController
         $getParams = new GetParamsDTO($count);
 
         try {
-            new CommitFactory($this->provider, $this->owner, $this->repo)
-                ->make()
-                ->getCommits($getParams);
+            $service = $this->commitFactory->make();
+
+            $service->getCommits($getParams);
         } catch (CommitServiceException $e) {
-            // TODO: create an acceptable user error message, instead of exposing our internals
-            view('fetch-commits', ['message' => $e->getMessage()]);
+            view('get-commits', ['message' => $e->getMessage()]);
 
             return;
         }

@@ -55,7 +55,6 @@ class GitHubApi implements ProviderApiInterface
                     throw new CommitApiException($e->getMessage(), $e->getCode(), $e);
                 }
 
-                sleep(pow(2, $attempt));
                 continue;
             }
 
@@ -66,7 +65,6 @@ class GitHubApi implements ProviderApiInterface
                     throw new CommitApiException("GitHub API error {$status} after {$maxRetries} attempts");
                 }
 
-                sleep(pow(2, $attempt));
                 continue;
             }
 

@@ -22,7 +22,7 @@ readonly class MySqlCommitRepository implements CommitSaveInterface, CommitViewI
         try {
             $this->commit->newQuery()->upsert($commits, ['hash']);
         } catch (Exception $e) {
-            throw new CommitRepositoryException($e->getMessage(), $e->getCode(), $e);
+            throw new CommitRepositoryException($e->getMessage(), (int)$e->getCode(), $e);
         }
     }
 

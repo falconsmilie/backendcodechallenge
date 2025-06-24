@@ -5,98 +5,172 @@ namespace Tests\Unit\Api\GitHub;
 use App\Api\GitHub\GitHubApi;
 use App\Exceptions\CommitApiException;
 use GuzzleHttp\Client;
-use GuzzleHttp\Exception\RequestException;
-use GuzzleHttp\Handler\MockHandler;
-use GuzzleHttp\HandlerStack;
-use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
+use GuzzleHttp\Exception\ConnectException;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use Psr\Http\Message\RequestInterface;
 
 class GitHubApiTest extends TestCase
 {
-    public function testMostRecentCommitsReturnsValidData(): void
+    private MockObject $mockClient;
+    private GitHubApi $gitHubApi;
+
+    protected function setUp(): void
     {
-        $fakeCommits = [
+        parent::setUp();
+
+        $this->mockClient = $this->getMockBuilder(Client::class)
+            ->onlyMethods(['get'])
+            ->getMock();
+
+        $this->gitHubApi = new GitHubApi($this->mockClient);
+    }
+
+    public function testMostRecentCommitsReturnsDataAndDetectsNextPage(): void
+    {
+        $responseBody = json_encode([
             [
                 'sha' => 'abc123',
                 'commit' => [
-                    'author' => [
-                        'name' => 'Chris Cornell',
-                        'date' => '2025-06-08T03:46:12Z',
-                    ],
-                    'message' => 'Black Hole Sun',
-                ],
-                'author' => [
-                    'avatar_url' => 'https://avatars.githubusercontent.com/u/chris',
-                    'html_url' => 'https://github.com/chris',
-                ],
-                'html_url' => 'https://github.com/soundgarden/superunknown/commit/abc123',
+                    'author' => ['name' => 'Alice', 'date' => '2023-01-01T00:00:00Z'],
+                    'message' => 'Initial commit']
             ],
-        ];
-
-        $mock = new MockHandler([
-            new Response(200, [], json_encode($fakeCommits)),
         ]);
 
-        $handlerStack = HandlerStack::create($mock);
-        $client = new Client(['handler' => $handlerStack]);
+        $response = new Response(
+            200,
+            ['Link' => '<https://api.github.com/repos/owner/repo/commits?page=2>; rel="next"'],
+            $responseBody
+        );
 
-        $api = new GitHubApi($client);
+        $this->mockClient->expects($this->once())
+            ->method('get')
+            ->with('repos/owner/repo/commits', $this->callback(function ($options) {
+                return isset($options['query']['per_page'], $options['query']['page'])
+                    && $options['query']['per_page'] <= 100
+                    && $options['query']['page'] === 1;
+            }))
+            ->willReturn($response);
 
-        $result = $api->mostRecentCommits('soundgarden', 'superunknown');
+        $result = $this->gitHubApi->mostRecentCommits('owner', 'repo', 1, 50);
 
         $this->assertIsArray($result);
-        $this->assertCount(1, $result);
-        $this->assertSame('abc123', $result[0]['sha']);
+        $this->assertArrayHasKey('commits', $result);
+        $this->assertArrayHasKey('hasNextPage', $result);
+        $this->assertCount(1, $result['commits']);
+        $this->assertTrue($result['hasNextPage']);
     }
 
-    public function testMostRecentCommitsThrowsOnNon200(): void
+    public function testMostRecentCommitsHandlesNoNextPage(): void
     {
-        $mock = new MockHandler([
-            new Response(500),
-        ]);
+        $responseBody = json_encode([]);
 
-        $client = new Client([
-            'handler' => HandlerStack::create($mock),
-            'http_errors' => false
-        ]);
+        $response = new Response(
+            200,
+            [],
+            $responseBody
+        );
 
-        $api = new GitHubApi($client);
+        $this->mockClient->expects($this->once())
+            ->method('get')
+            ->willReturn($response);
 
-        $this->expectException(CommitApiException::class);
-        $this->expectExceptionMessage('GitHub says: 500');
+        $result = $this->gitHubApi->mostRecentCommits('owner', 'repo');
 
-        $api->mostRecentCommits('soundgarden', 'superunknown');
+        $this->assertIsArray($result);
+        $this->assertEmpty($result['commits']);
+        $this->assertFalse($result['hasNextPage']);
     }
 
-    public function testMostRecentCommitsThrowsOnInvalidJson(): void
+    public function testMostRecentCommitsRetriesOnTransientErrors(): void
     {
-        $mock = new MockHandler([
-            new Response(200, [], '{not-json'),
-        ]);
+        $responseBody = json_encode([]);
 
-        $client = new Client(['handler' => HandlerStack::create($mock)]);
-        $api = new GitHubApi($client);
+        $response = new Response(200, [], $responseBody);
 
-        $this->expectException(CommitApiException::class);
-        $api->mostRecentCommits('soundgarden', 'superunknown');
+        $this->mockClient->expects($this->exactly(2))
+            ->method('get')
+            ->willReturnOnConsecutiveCalls(
+                $this->throwException(
+                    new ConnectException('Connection timed out', $this->createMock(RequestInterface::class))
+                ),
+                $response
+            );
+
+        $result = $this->gitHubApi->mostRecentCommits('owner', 'repo', 1, 10, 2);
+
+        $this->assertIsArray($result);
+        $this->assertFalse($result['hasNextPage']);
     }
 
-    public function testMostRecentCommitsThrowsOnGuzzleException(): void
+    public function testMostRecentCommitsThrowsExceptionAfterMaxRetries(): void
     {
-        $mock = new MockHandler([
-            new RequestException(
-                'Request failed',
-                new Request('GET', 'repos/soundgarden/superunknown/commits')
-            ),
-        ]);
-
-        $client = new Client(['handler' => HandlerStack::create($mock)]);
-        $api = new GitHubApi($client);
-
         $this->expectException(CommitApiException::class);
-        $this->expectExceptionMessage('Request failed');
 
-        $api->mostRecentCommits('soundgarden', 'superunknown');
+        $this->mockClient->expects($this->exactly(3))
+            ->method('get')
+            ->willThrowException(new ConnectException('Network error', $this->createMock(RequestInterface::class)));
+
+        $this->gitHubApi->mostRecentCommits('owner', 'repo', 1, 10, 3);
+    }
+
+    public function testMostRecentCommitsThrowsExceptionOnNon200Status(): void
+    {
+        $this->expectException(CommitApiException::class);
+        $this->expectExceptionMessage('GitHub says: 404');
+
+        $response = new Response(404, [], 'Not Found');
+
+        $this->mockClient->expects($this->once())
+            ->method('get')
+            ->willReturn($response);
+
+        $this->gitHubApi->mostRecentCommits('owner', 'repo');
+    }
+
+    public function testMostRecentCommitsThrowsExceptionOnMalformedJson(): void
+    {
+        $this->expectException(CommitApiException::class);
+
+        $response = new Response(200, [], 'Invalid JSON');
+
+        $this->mockClient->expects($this->once())
+            ->method('get')
+            ->willReturn($response);
+
+        $this->gitHubApi->mostRecentCommits('owner', 'repo');
+    }
+
+    public function testMostRecentCommitsRetriesOnStatus429AndEventuallySucceeds(): void
+    {
+        $response429 = new Response(429, [], 'Too Many Requests');
+        $response200 = new Response(200, [], json_encode([]));
+
+        $this->mockClient->expects($this->exactly(2))
+            ->method('get')
+            ->willReturnOnConsecutiveCalls(
+                $response429,
+                $response200
+            );
+
+        $result = $this->gitHubApi->mostRecentCommits('owner', 'repo', 1, 10, 2);
+
+        $this->assertIsArray($result);
+        $this->assertFalse($result['hasNextPage']);
+    }
+
+    public function testMostRecentCommitsThrowsExceptionAfterMaxRetriesOnStatus429(): void
+    {
+        $this->expectException(CommitApiException::class);
+        $this->expectExceptionMessage('GitHub API error 429 after 3 attempts');
+
+        $response429 = new Response(429, [], 'Too Many Requests');
+
+        $this->mockClient->expects($this->exactly(3))
+            ->method('get')
+            ->willReturn($response429);
+
+        $this->gitHubApi->mostRecentCommits('owner', 'repo', 1, 10, 3);
     }
 }

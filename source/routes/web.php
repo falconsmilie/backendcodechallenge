@@ -1,6 +1,7 @@
 <?php
 
 use App\Controllers\VersionHistoryController;
+use App\Services\CommitFactory;
 
 require_once __DIR__ . '/../bootstrap/bootstrap.php';
 
@@ -28,7 +29,8 @@ if (count($segments) === 4) {
     $action = 'index';
 }
 
-$controller = new VersionHistoryController($provider, $owner, $repo);
+$commitFactory = new CommitFactory($provider, $owner, $repo);
+$controller = new VersionHistoryController($commitFactory);
 
 switch ($action) {
     case 'index':
