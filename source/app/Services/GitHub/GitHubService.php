@@ -51,24 +51,28 @@ class GitHubService extends AbstractCommitService
         return $this->mostRecentCommits($pages, $perPage, $commitSaveHandler);
     }
 
-    /**
-     * @throws CommitRepositoryException
-     */
     public function viewCommits(int $page = 1, int $resultsPerPage = 100): array
     {
-        $commits = $this->commitViewer->getByProviderGroupedByAuthor(
-            $page,
-            $resultsPerPage,
-            self::PROVIDER,
-            $this->owner,
-            $this->repo
-        );
+        $error = null;
+        $commits = [];
+
+        try {
+            $commits = $this->commitViewer->getByProviderGroupedByAuthor(
+                $page,
+                $resultsPerPage,
+                self::PROVIDER,
+                $this->owner,
+                $this->repo
+            );
+        } catch (CommitRepositoryException $e) {
+            $error = $e->getMessage();
+        }
 
         $totalCommits = $this->commitViewer->countByProvider(self::PROVIDER, $this->owner, $this->repo);
 
         $totalPages = (int)ceil($totalCommits / $resultsPerPage);
 
-        return compact('commits', 'page', 'resultsPerPage', 'totalPages', 'totalCommits');
+        return compact('commits', 'error', 'page', 'resultsPerPage', 'totalPages', 'totalCommits');
     }
 
     /**

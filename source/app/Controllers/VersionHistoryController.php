@@ -31,19 +31,26 @@ class VersionHistoryController
             ? min(self::RESULTS_PER_PAGE, (int)$_GET['results_per_page'])
             : self::RESULTS_PER_PAGE;
 
-        view(
-            'view-commits',
-            new CommitFactory($this->provider, $this->owner, $this->repo)
-                ->make()
-                ->viewCommits($page, $resultsPerPage)
-        );
+        try {
+            view(
+                'view-commits',
+                new CommitFactory($this->provider, $this->owner, $this->repo)
+                    ->make()
+                    ->viewCommits($page, $resultsPerPage)
+            );
+        } catch (CommitServiceException $e) {
+            view(
+                'view-commits',
+                ['error' => $e->getMessage(), 'commits' => [], 'page', 'resultsPerPage', 'totalPages', 'totalCommits']
+            );
+        }
     }
 
     public function get(): void
     {
         // imagine we do some validation here wth these query params ...
         $count = isset($_GET['commit_count'])
-            ? max(self::GET_COMMIT_COUNT, (int)$_GET['commit_count'])
+            ? min(self::GET_COMMIT_COUNT, (int)$_GET['commit_count'])
             : self::GET_COMMIT_COUNT;
 
         try {

@@ -9,7 +9,11 @@
     ?>
 </h1>
 <?php
-if (! count($commits)) {
+if ($error) {
+    ?>
+    <div>Something went wrong: <?= $error ?></div>
+    <?php
+} elseif (! count($commits)) {
     ?>
     <div>There are no results for that request.</div>
     <?php
