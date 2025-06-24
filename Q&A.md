@@ -212,7 +212,7 @@ readonly class ExternalApiCommitRepository implements CommitSaveInterface, Commi
 
 ### How to Use It
 
-In `GitHubService`, we can inject this instead of `MySqlCommitRepository`:
+In `GitHubService`, we can inject `ExternalApiCommitRepository` instead of `MySqlCommitRepository`:
 
 ```php
 $client = new Client(['base_uri' => 'https://external-commit-api.com']);
