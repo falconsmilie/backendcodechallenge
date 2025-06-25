@@ -20,9 +20,7 @@ class CommitRepository implements CommitSaveInterface, CommitViewInterface, Comm
 {
     public function __construct(private readonly Commit $commit, private ?ProviderApiInterface $api = null)
     {
-        if ($api === null) {
-            $this->api = new GitHubApi();
-        }
+        $this->api = $api ?? new GitHubApi();
     }
 
     /**

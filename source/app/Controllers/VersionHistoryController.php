@@ -37,28 +37,26 @@ class VersionHistoryController
 
         try {
             $data = $this->commitFactory->make()->viewCommits($pagination);
-
-            view('view-commits', [
+            $pageData = [
                 'error' => null,
                 'commits' => $data['commits'],
                 'page' => $data['page'],
                 'resultsPerPage' => $data['resultsPerPage'],
                 'totalPages' => $data['totalPages'],
                 'totalCommits' => $data['totalCommits'],
-            ]);
+            ];
         } catch (CommitServiceException | InvalidArgumentException $e) {
-            view(
-                'view-commits',
-                [
-                    'error' => $e->getMessage(),
-                    'commits' => [],
-                    'page' => $page,
-                    'resultsPerPage' => $resultsPerPage,
-                    'totalPages' => 0,
-                    'totalCommits' => 0
-                ]
-            );
+            $pageData = [
+                'error' => $e->getMessage(),
+                'commits' => [],
+                'page' => $page,
+                'resultsPerPage' => $resultsPerPage,
+                'totalPages' => 0,
+                'totalCommits' => 0
+            ];
         }
+
+        view('view-commits', $pageData);
     }
 
     public function get(): void
