@@ -14,7 +14,19 @@
         + [Deployment Layout](#deployment-layout)
 
 ## The Brief
-The task is outlined [here](https://github.com/Circunomics/hiring_backendcodechallenge).
+
+* Fork this repository 
+* Create a source folder to contain your code. 
+* In the source directory, please create a PHP or Python web application 
+* Your application should accomplish the following:
+  * Connect to the GitHub API 
+  * Find the nodejs/node repository 
+  * Find the 1000 most recent commits (only hashes)
+  * Create a model and store the 1000 most recent commits in the database. Make sure to avoid any duplicates.
+  * Create a route and view that displays the recent commits by author from the database.
+  * Keep your solution flexible enough to be able to later on provide support for the bitbucket-api/gitlab-api, etc...
+
+Challenge created by [Circunomics](https://www.circunomics.com/).
 
 ---
 ## How would your solution differ if you had to call another external API to store and receive the commits?
@@ -29,8 +41,8 @@ The task is outlined [here](https://github.com/Circunomics/hiring_backendcodecha
 * It returns JSON, ideally grouped or paginated.
 
 ### CommitRepository
-The only changes needed are the get, save, view and format interface methods in the [`CommitRepository`](source/app/Repositories/CommitRepository.php) 
-must be updated to allow for requests to an external API. That is all.
+The only changes needed are the methods in the [`CommitRepository`](source/app/Repositories/CommitRepository.php) 
+must be updated to allow for requests to an external API.
 
 ### Benefits
 * Zero changes to service and API classes.

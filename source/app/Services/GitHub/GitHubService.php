@@ -60,6 +60,8 @@ class GitHubService extends AbstractCommitService
     {
         $error = null;
         $commits = [];
+        $totalCommits = 0;
+        $totalPages = 0;
 
         try {
             $commits = $this->view->getByProviderGroupedByAuthor(
@@ -73,9 +75,10 @@ class GitHubService extends AbstractCommitService
             $error = $e->getMessage();
         }
 
-        $totalCommits = $this->view->countByProvider(self::PROVIDER, $this->owner, $this->repo);
-
-        $totalPages = (int)ceil($totalCommits / $pagination->resultsPerPage);
+        if ($error === null) {
+            $totalCommits = $this->view->countByProvider(self::PROVIDER, $this->owner, $this->repo);
+            $totalPages = (int)ceil($totalCommits / $pagination->resultsPerPage);
+        }
 
         return [
             'commits' => $commits,
