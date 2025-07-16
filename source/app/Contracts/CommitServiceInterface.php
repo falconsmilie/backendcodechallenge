@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Contracts;
 
 use App\DataTransferObjects\GetParamsDTO;
 use App\DataTransferObjects\PaginationDTO;

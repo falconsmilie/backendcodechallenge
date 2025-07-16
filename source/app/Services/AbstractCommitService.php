@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Contracts\CommitServiceInterface;
 use App\DataTransferObjects\GetParamsDTO;
 use App\DataTransferObjects\PaginationDTO;
 use App\Exceptions\CommitServiceException;

@@ -3,7 +3,7 @@
 namespace App\Factories;
 
 use App\Exceptions\CommitServiceException;
-use App\Services\CommitServiceInterface;
+use App\Contracts\CommitServiceInterface;
 use App\Services\GitHub\GitHubService;
 
 final class CommitFactory
