@@ -116,7 +116,7 @@ class CommitRepository implements CommitSaveInterface, CommitViewInterface, Comm
     /**
      * @throws CommitRepositoryException
      */
-    public function format(array $rawCommit, $provider, string $owner, string $repo): CommitDTO
+    public function format(array $rawCommit, string $provider, string $owner, string $repo): CommitDTO
     {
         try {
             $now = new DateTimeImmutable('now', new DateTimeZone('UTC'));
