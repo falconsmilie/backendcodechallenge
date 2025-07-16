@@ -14,7 +14,7 @@ use App\Repositories\CommitRepository;
 use App\Services\AbstractCommitService;
 use App\Services\Commit\BufferedCommitSave;
 
-class GitHubService extends AbstractCommitService
+final class GitHubService extends AbstractCommitService
 {
     private const string PROVIDER = 'github';
     private const int BATCH_INSERT_BUFFER_SIZE = 100;
