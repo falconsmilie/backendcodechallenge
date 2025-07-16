@@ -1,7 +1,7 @@
 <?php
 
 use App\Controllers\VersionHistoryController;
-use App\Services\CommitFactory;
+use App\Factories\CommitFactory;
 
 require_once __DIR__ . '/../bootstrap/bootstrap.php';
 

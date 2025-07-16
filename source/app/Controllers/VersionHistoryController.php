@@ -4,7 +4,7 @@ namespace App\Controllers;
 use App\DataTransferObjects\GetParamsDTO;
 use App\DataTransferObjects\PaginationDTO;
 use App\Exceptions\CommitServiceException;
-use App\Services\CommitFactory;
+use App\Factories\CommitFactory;
 use InvalidArgumentException;
 use function view;
 
