@@ -77,7 +77,9 @@ class GitHubService extends AbstractCommitService
 
         if ($error === null) {
             $totalCommits = $this->view->countByProvider(self::PROVIDER, $this->owner, $this->repo);
-            $totalPages = (int)ceil($totalCommits / $pagination->resultsPerPage);
+            if ($totalCommits) {
+                $totalPages = (int)ceil($totalCommits / $pagination->resultsPerPage);
+            }
         }
 
         return [
