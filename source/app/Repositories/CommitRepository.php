@@ -81,7 +81,7 @@ class CommitRepository implements CommitSaveInterface, CommitViewInterface, Comm
         int $pages,
         int $perPage,
         callable $processCommit
-    ): bool {
+    ): void {
 
         for ($page = 1; $page <= $pages; $page++) {
             $commitCount = 0;
@@ -111,8 +111,6 @@ class CommitRepository implements CommitSaveInterface, CommitViewInterface, Comm
                 break;
             }
         }
-
-        return true;
     }
 
     /**

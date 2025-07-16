@@ -35,7 +35,7 @@ class GitHubService extends AbstractCommitService
         $this->view = $commitViewer ?? $this->save;
     }
 
-    public function getCommits(GetParamsDTO $params): bool
+    public function getCommits(GetParamsDTO $params): void
     {
         $perPage = (int)min($params->commitCount, config('app.github.requests.fetch_per_page_limit'));
         $pages = (int)ceil($params->commitCount / $perPage);
@@ -43,7 +43,7 @@ class GitHubService extends AbstractCommitService
         $commitSaveHandler = new BufferedCommitSave($this->save, self::BATCH_INSERT_BUFFER_SIZE);
 
         try {
-            return $this->get->mostRecentCommits(
+            $this->get->mostRecentCommits(
                 self::PROVIDER,
                 $this->owner,
                 $this->repo,

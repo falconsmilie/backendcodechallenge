@@ -11,5 +11,5 @@ interface CommitGetInterface
         int $pages,
         int $perPage,
         callable $processCommit
-    ): bool;
+    ): void;
 }

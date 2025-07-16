@@ -12,7 +12,7 @@ abstract class AbstractCommitService implements CommitServiceInterface
     /**
      * @throws CommitServiceException
      */
-    abstract public function getCommits(GetParamsDTO $params): bool;
+    abstract public function getCommits(GetParamsDTO $params): void;
 
     abstract public function viewCommits(PaginationDTO $pagination): array;
 }

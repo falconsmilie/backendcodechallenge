@@ -9,5 +9,5 @@ interface CommitServiceInterface
 {
     public function viewCommits(PaginationDTO $pagination): array;
 
-    public function getCommits(GetParamsDTO $params): bool;
+    public function getCommits(GetParamsDTO $params): void;
 }
