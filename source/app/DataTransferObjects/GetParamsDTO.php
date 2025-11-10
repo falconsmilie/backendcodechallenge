@@ -3,7 +3,7 @@ namespace App\DataTransferObjects;
 
 use InvalidArgumentException;
 
-final class GetParamsDTO
+final readonly class GetParamsDTO
 {
     private const int MAX_COMMIT_COUNT = 1000;
 

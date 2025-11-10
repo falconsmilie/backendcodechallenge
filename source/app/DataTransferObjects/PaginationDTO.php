@@ -5,7 +5,7 @@ namespace App\DataTransferObjects;
 
 use InvalidArgumentException;
 
-final class PaginationDTO
+final readonly class PaginationDTO
 {
     public function __construct(
         public int $page = 1,

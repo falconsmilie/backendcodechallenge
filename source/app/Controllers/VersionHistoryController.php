@@ -3,6 +3,7 @@ namespace App\Controllers;
 
 use App\DataTransferObjects\GetParamsDTO;
 use App\DataTransferObjects\PaginationDTO;
+use App\DataTransferObjects\ViewDTO;
 use App\Exceptions\CommitServiceException;
 use App\Factories\CommitFactory;
 use InvalidArgumentException;
@@ -36,27 +37,14 @@ class VersionHistoryController
         $pagination = new PaginationDTO($page, $resultsPerPage);
 
         try {
-            $data = $this->commitFactory->make()->viewCommits($pagination);
-            $pageData = [
-                'error' => null,
-                'commits' => $data['commits'],
-                'page' => $data['page'],
-                'resultsPerPage' => $data['resultsPerPage'],
-                'totalPages' => $data['totalPages'],
-                'totalCommits' => $data['totalCommits'],
-            ];
+            $pageData = $this->commitFactory
+                ->make()
+                ->viewCommits($pagination);
         } catch (CommitServiceException | InvalidArgumentException $e) {
-            $pageData = [
-                'error' => $e->getMessage(),
-                'commits' => [],
-                'page' => $page,
-                'resultsPerPage' => $resultsPerPage,
-                'totalPages' => 0,
-                'totalCommits' => 0
-            ];
+            $pageData = ViewDTO::emptyWithError($e->getMessage(), $page, $resultsPerPage);
         }
 
-        view('view-commits', $pageData);
+        view('view-commits', $pageData->toArray());
     }
 
     public function get(): void

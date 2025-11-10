@@ -7,6 +7,7 @@ use App\Contracts\CommitSaveInterface;
 use App\Contracts\CommitViewInterface;
 use App\DataTransferObjects\GetParamsDTO;
 use App\DataTransferObjects\PaginationDTO;
+use App\DataTransferObjects\ViewDTO;
 use App\Exceptions\CommitRepositoryException;
 use App\Exceptions\CommitServiceException;
 use App\Models\Commit;
@@ -56,7 +57,7 @@ final class GitHubService extends AbstractCommitService
         }
     }
 
-    public function viewCommits(PaginationDTO $pagination): array
+    public function viewCommits(PaginationDTO $pagination): ViewDTO
     {
         $error = null;
         $commits = [];
@@ -82,13 +83,13 @@ final class GitHubService extends AbstractCommitService
             }
         }
 
-        return [
-            'commits' => $commits,
-            'error' => $error,
-            'page' => $pagination->page,
-            'resultsPerPage' => $pagination->resultsPerPage,
-            'totalPages' => $totalPages,
-            'totalCommits' => $totalCommits,
-        ];
+        return new ViewDTO(
+            null,
+            $commits,
+            $pagination->page,
+            $pagination->resultsPerPage,
+            $totalPages,
+            $totalCommits
+        );
     }
 }
